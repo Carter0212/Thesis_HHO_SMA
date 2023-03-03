@@ -12,4 +12,3 @@ You need libraries:
 	python >= 3.7.6
 	numpy >= 1.18.1
 
-#!/usr/bin/env python
