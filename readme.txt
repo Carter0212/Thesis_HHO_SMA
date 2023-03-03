@@ -12,15 +12,6 @@ You need libraries:
 	python >= 3.7.6
 	numpy >= 1.18.1
 
-#!/usr/bin/env python
-# ------------------------------------------------------------------------------------------------------%
-# Python code created by "Thieu Nguyen" at 21:29, 12/06/2020                                                        %
-#                                                                                                       %
-#       Email:      nguyenthieu2102@gmail.com                                                           %
-#       Homepage:   https://www.researchgate.net/profile/Thieu_Nguyen6                                  %
-#       Github:     https://github.com/thieunguyen5991                                                  %
-#-------------------------------------------------------------------------------------------------------%
-
 # Main paper (Please refer to the main paper):
 # Slime Mould Algorithm: A New Method for Stochastic Optimization
 # Shimin Li, Huiling Chen, Mingjing Wang, Ali Asghar Heidari, Seyedali Mirjalili
@@ -34,18 +25,3 @@ You need libraries:
 # You can find the SMA paper at https://doi.org/10.1016/j.future.2020.03.055
 # Please follow the paper for related updates in researchgate: 
 # https://www.researchgate.net/publication/340431861_Slime_mould_algorithm_A_new_method_for_stochastic_optimization
-# ------------------------------------------------------------------------------------------------------------
-#  Main idea: Shimin Li
-#  Author and programmer: Shimin Li,Ali Asghar Heidari,Huiling Chen
-#  e-Mail: simonlishimin@foxmail.com
-# ------------------------------------------------------------------------------------------------------------
-#  Co-author:
-#             Huiling Chen(chenhuiling.jlu@gmail.com)
-#             Mingjing Wang(wangmingjing.style@gmail.com)
-#             Ali Asghar Heidari(aliasghar68@gmail.com, as_heidari@ut.ac.ir)
-#             Seyedali Mirjalili(ali.mirjalili@gmail.com)
-#             
-#             Researchgate: Ali Asghar Heidari https://www.researchgate.net/profile/Ali_Asghar_Heidari
-#             Researchgate: Seyedali Mirjalili https://www.researchgate.net/profile/Seyedali_Mirjalili
-#             Researchgate: Huiling Chen https://www.researchgate.net/profile/Huiling_Chen
-# ------------------------------------------------------------------------------------------------------------
