@@ -5,21 +5,21 @@ import numpy
 import math
 from solution import solution
 import time
-
+import numpy as np
 
 
 def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
 
-    #dim=30
-    #SearchAgents_no=50
-    #lb=-100
-    #ub=100
-    #Max_iter=500
+    # dim=30
+    # SearchAgents_no=50 
+    # lb=-100
+    # ub=100
+    # Max_iter=500
         
     
     # initialize the location and Energy of the rabbit
     Rabbit_Location=numpy.zeros(dim)
-    Rabbit_Energy=float("inf")  #change this to -inf for maximization problems
+    Rabbit_Energy=float("-inf")  #change this to -inf for maximization problems
     
     if not isinstance(lb, list):
         lb = [lb for _ in range(dim)]
@@ -55,9 +55,10 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
             
             # fitness of locations
             fitness=objf(X[i,:])
+            # print(fitness)
             
             # Update the location of Rabbit
-            if fitness<Rabbit_Energy: # Change this to > for maximization problem
+            if fitness>Rabbit_Energy: # Change this to > for maximization problem
                 Rabbit_Energy=fitness 
                 Rabbit_Location=X[i,:].copy() 
             
@@ -139,8 +140,11 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     s.convergence=convergence_curve
     s.optimizer="HHO"   
     s.objfname=objf.__name__
-    s.best =Rabbit_Energy 
+    s.best=Rabbit_Energy 
     s.bestIndividual = Rabbit_Location
+    s.show_time()
+    s.pri()
+    
     
     
     
@@ -154,3 +158,22 @@ def Levy(dim):
     zz = numpy.power(numpy.absolute(v),(1/beta))
     step = numpy.divide(u,zz)
     return step
+
+def Rosenbrock(x):
+    # return max(x)
+    return sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+
+if __name__ == "__main__":
+    # lb = [-5, -5]  # 下限
+    # ub = [5, 5]  # 上限
+    # dim = 2  # 維度
+    # SearchAgents_no = 50  # 搜尋代理人數
+    # Max_iter = 1000  # 迭代次數
+    dim=10000
+    SearchAgents_no=100
+    lb=0
+    ub=1
+    Max_iter=10
+    HHO(Rosenbrock, lb, ub, dim, SearchAgents_no, Max_iter)
+    
+

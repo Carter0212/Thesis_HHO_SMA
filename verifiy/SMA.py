@@ -8,9 +8,9 @@
 
 
 from numpy.random import uniform, choice
-from numpy import abs, zeros, log10, where, arctanh, tanh ,shape
+from numpy import abs, zeros, log10, where, arctanh, tanh
 from root import Root
-import random
+
 
 class BaseSMA(Root):
     """
@@ -29,18 +29,18 @@ class BaseSMA(Root):
         self.pop_size = pop_size
         self.z = z
 
-    def create_solution(self, minmax=1):
+    def create_solution(self, minmax=0):
         pos = uniform(self.lb, self.ub)
-        fit = self.get_fitness_position(pos,minmax)
+        fit = self.get_fitness_position(pos)
         weight = zeros(self.problem_size)
         return [pos, fit, weight]
 
     def train(self):
-        pop = [self.create_solution(1) for _ in range(self.pop_size)]
+        pop = [self.create_solution() for _ in range(self.pop_size)]
         pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB)      # Eq.(2.6)
 
         for epoch in range(self.epoch):
-            print(self.ID_FIT)
+
             s = pop[0][self.ID_FIT] - pop[-1][self.ID_FIT] + self.EPSILON  # plus eps to avoid denominator zero
 
             # calculate the fitness weight of each slime mold
@@ -78,10 +78,9 @@ class BaseSMA(Root):
 
             # Sorted population and update the global best
             pop, g_best = self.update_sorted_population_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
-            
             self.loss_train.append(g_best[self.ID_FIT])
             if self.verbose:
-                print("> Epoch: {}, Best fit: {}".format(epoch + 1, 1/g_best[self.ID_FIT]))
+                print("> Epoch: {}, Best fit: {}".format(epoch + 1, g_best[self.ID_FIT]))
         self.solution = g_best
         return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train
 
@@ -95,10 +94,6 @@ class OriginalSMA(Root):
     """
 
     ID_WEI = 2
-
-    
- 
-
 
     def __init__(self, obj_func=None, lb=None, ub=None, problem_size=50, verbose=True, epoch=750, pop_size=100, z=0.03):
         Root.__init__(self, obj_func, lb, ub, problem_size, verbose)
@@ -117,6 +112,7 @@ class OriginalSMA(Root):
         pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB)      # Eq.(2.6)
 
         for epoch in range(self.epoch):
+
             s = pop[0][self.ID_FIT] - pop[-1][self.ID_FIT] + self.EPSILON       # plus eps to avoid denominator zero
 
             # calculate the fitness weight of each slime mold
@@ -132,7 +128,6 @@ class OriginalSMA(Root):
 
             # Update the Position of search agents
             for i in range(0, self.pop_size):
-                
                 if uniform() < self.z:                                          # Eq.(2.7)
                     pop[i][self.ID_POS] = uniform(self.lb, self.ub)
                 else:

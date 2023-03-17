@@ -1,4 +1,4 @@
-from numpy import where, clip, logical_and, ones, array, ceil,shape
+from numpy import where, clip, logical_and, ones, array, ceil
 from numpy.random import uniform
 from copy import deepcopy
 
@@ -7,12 +7,12 @@ class Root:
     """ This is root of all Algorithms """
 
     ID_MIN_PROB = 0         # min problem
-    ID_MAX_PROB = -1        # max problem
+    ID_MAX_PROB = float('Inf')      # max problem
 
     ID_POS = 0              # Position
     ID_FIT = 1              # Fitness
 
-    EPSILON = 10E-10 
+    EPSILON = 10E-10
 
     def __init__(self, obj_func=None, lb=None, ub=None, problem_size=50, verbose=True):
         """
@@ -69,20 +69,17 @@ class Root:
         fitness = self.get_fitness_position(position=position, minmax=minmax)
         return [position, fitness]
 
-    def get_fitness_position(self, position=None, minmax=1):
+    def get_fitness_position(self, position=None, minmax=0):
         """     Assumption that objective function always return the original value
         :param position: 1-D numpy array
         :param minmax: 0- min problem, 1 - max problem
         :return:
         """
-        # print(self.obj_func(position))
-        # print(1.0 / (self.obj_func(position) + self.EPSILON))
         return self.obj_func(position) if minmax == 0 else 1.0 / (self.obj_func(position) + self.EPSILON)
 
     def get_sorted_pop_and_global_best_solution(self, pop=None, id_fit=None, id_best=None):
         """ Sort population and return the sorted population and the best position """
         sorted_pop = sorted(pop, key=lambda temp: temp[id_fit])
-        # print(shape(sorted_pop))
         return sorted_pop, deepcopy(sorted_pop[id_best])
 
     def amend_position(self, position=None):

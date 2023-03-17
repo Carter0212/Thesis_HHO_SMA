@@ -8,9 +8,12 @@
 
 
 from numpy.random import uniform, choice
-from numpy import abs, zeros, log10, where, arctanh, tanh ,shape
+import numpy
+from numpy import abs, zeros, log10, where, arctanh, tanh,clip
 from root import Root
 import random
+import math
+
 
 class BaseSMA(Root):
     """
@@ -40,7 +43,7 @@ class BaseSMA(Root):
         pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB)      # Eq.(2.6)
 
         for epoch in range(self.epoch):
-            print(self.ID_FIT)
+
             s = pop[0][self.ID_FIT] - pop[-1][self.ID_FIT] + self.EPSILON  # plus eps to avoid denominator zero
 
             # calculate the fitness weight of each slime mold
@@ -78,7 +81,6 @@ class BaseSMA(Root):
 
             # Sorted population and update the global best
             pop, g_best = self.update_sorted_population_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
-            
             self.loss_train.append(g_best[self.ID_FIT])
             if self.verbose:
                 print("> Epoch: {}, Best fit: {}".format(epoch + 1, 1/g_best[self.ID_FIT]))
@@ -94,11 +96,68 @@ class OriginalSMA(Root):
             https://doi.org/10.1016/j.future.2020.03.055
     """
 
+    def HHO(self, pop_i,singe_dim,epoch,g_best):
+        E1=2*(1-(epoch/self.epoch))
+        E0=2*random.random()-1
+
+        Escaping_Energy=E1*(E0)
+
+        if abs(Escaping_Energy)>=1:
+            #Harris' hawks perch randomly based on 2 strategy:
+            q = random.random()
+            rand_Hawk_index = math.floor(self.pop_size*random.random())
+            X_rand = pop_i[rand_Hawk_index, :]
+            if q<0.5:
+                # perch based on other family members
+                pop_i=X_rand-random.random()*abs(X_rand-2*random.random()*pop_i)
+
+            elif q>=0.5:
+                #perch on a random tall tree (random site inside group's home range)
+                pop_i=(g_best[self.ID_FIT] - pop_i.mean(0))-random.random()*((self.ub-self.lb)*random.random()+self.lb)
+
+        # -------- Exploitation phase -------------------
+        elif abs(Escaping_Energy)<1:
+            #Attacking the rabbit using 4 strategies regarding the behavior of the rabbit
+
+            #phase 1: ----- surprise pounce (seven kills) ----------
+            #surprise pounce (seven kills): multiple, short rapid dives by different hawks
+
+            r=random.random() # probablity of each event
+            
+            if r>=0.5 and abs(Escaping_Energy)<0.5: # Hard besiege Eq. (6) in paper
+                pop_i=(self.solution[0])-Escaping_Energy*abs(self.solution[0]-pop_i)
+
+            if r>=0.5 and abs(Escaping_Energy)>=0.5:  # Soft besiege Eq. (4) in paper
+                Jump_strength=2*(1- random.random()) # random jump strength of the rabbit
+                pop_i=(self.solution[0]-pop_i)-Escaping_Energy*abs(Jump_strength*self.solution[0]-pop_i)
+            
+            #phase 2: --------performing team rapid dives (leapfrog movements)----------
+            if r<0.5 and abs(Escaping_Energy)>=0.5: # Soft besiege Eq. (10) in paper
+                #rabbit try to escape by many zigzag deceptive motions
+                Jump_strength=2*(1-random.random())
+                X1=self.solution[0]-Escaping_Energy*abs(Jump_strength*self.solution[0]-pop_i)
+                X1 = clip(X1, self.lb, self.ub)
+
+                if self.get_fitness_position(X1)< self.solution[1]: # improved move?
+                    pop_i = X1.copy()
+                else: # hawks perform levy-based short rapid dives around the rabbit
+                    X2=self.solution[0]-Escaping_Energy*abs(Jump_strength*self.solution[0]-pop_i)+numpy.multiply(numpy.random.randn(self.problem_size),Levy(self.problem_size))
+                    X2 = numpy.clip(X2, self.lb, self.ub)
+                    if self.get_fitness_position(X2)< self.solution[1]:
+                        pop_i = X2.copy()
+            if r<0.5 and abs(Escaping_Energy)<0.5:   # Hard besiege Eq. (11) in paper
+                Jump_strength=2*(1-random.random())
+                X1=self.solution[0]-Escaping_Energy*abs(Jump_strength*self.solution[0]-pop_i.mean(0))
+                X1 = numpy.clip(X1, self.lb, self.ub)
+                
+                if self.get_fitness_position(X1)< self.solution[1]: # improved move?
+                    pop_i = X1.copy()
+                else: # Perform levy-based short rapid dives around the rabbit
+                    X2=self.solution[0]-Escaping_Energy*abs(Jump_strength*self.solution[0]-pop_i.mean(0))+numpy.multiply(numpy.random.randn(dim),Levy(dim))
+                    X2 = numpy.clip(X2, self.lb, self.ub)
+                    if self.get_fitness_position(X2)< self.solution[1]:
+                        pop_i = X2.copy()
     ID_WEI = 2
-
-    
- 
-
 
     def __init__(self, obj_func=None, lb=None, ub=None, problem_size=50, verbose=True, epoch=750, pop_size=100, z=0.03):
         Root.__init__(self, obj_func, lb, ub, problem_size, verbose)
@@ -117,6 +176,7 @@ class OriginalSMA(Root):
         pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB)      # Eq.(2.6)
 
         for epoch in range(self.epoch):
+
             s = pop[0][self.ID_FIT] - pop[-1][self.ID_FIT] + self.EPSILON       # plus eps to avoid denominator zero
 
             # calculate the fitness weight of each slime mold
@@ -132,7 +192,6 @@ class OriginalSMA(Root):
 
             # Update the Position of search agents
             for i in range(0, self.pop_size):
-                
                 if uniform() < self.z:                                          # Eq.(2.7)
                     pop[i][self.ID_POS] = uniform(self.lb, self.ub)
                 else:
