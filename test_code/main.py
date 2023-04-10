@@ -1,22 +1,19 @@
 import math
 import numpy as np
 import HHO
-import HHO_combin
-import SMA_combine
 import random
 import matplotlib.pyplot as plt
-from SMA import BaseSMA, OriginalSMA
 from numpy import sum, pi, exp, sqrt, cos
 import csv
 W = (10**9) ##(Hz)
 alpha=2 ##(Path loss exponent)
 lambd = 0.005 #(m)
-Min_Rate = 8*(10**7) #(bit/s)
+Min_Rate = 8*(10**8) #(bit/s)
 N_0=-174 #(dBm/Hz)
 Min_Power = 0 #(mW)
 Max_power = 1000 #(mW)
 base_numbers = 4
-ue_numbers = 6
+ue_numbers = 20
 constrained_num=6
 
 def func_sum(solution):
@@ -62,21 +59,16 @@ def find_MaxEE(X):
     if  np.all(np.sum(NP_three_D_X[1]*check_conectional,axis=1)<= Max_power) :
         Check_constrained[5] = True
 
-    throughput_feasible = Min_Rate - np.sum(Base_ue_ThroughtpusTable,axis=0)
-    throughput_feasible_total = 0
-    for x in throughput_feasible:
-        throughput_feasible_total+=max(x,0)
-    
     Energy_efficient = np.sum(Base_ue_ThroughtpusTable) / (np.sum(NP_three_D_X[1]*check_conectional) + 10E-10)
     constrained_violation = (   
         max(np.sum((1-np.sum(check_conectional,axis=0))),0) +   
         max(np.sum((1-np.sum(check_conectional,axis=1))),0) +
-        throughput_feasible_total+
-        np.sum(np.maximum( np.sum(NP_three_D_X[1]*check_conectional,axis=1) - Max_power,0)*(10**5))
+        max(np.sum(Min_Rate - np.sum(Base_ue_ThroughtpusTable,axis=0))/(10**6),0)+
+        np.sum(np.maximum( np.sum(NP_three_D_X[1]*check_conectional,axis=1) - Max_power,0))
         )
     test_num = (max(np.sum((1-np.sum(check_conectional,axis=0))),0),
                 max(np.sum((1-np.sum(check_conectional,axis=1))),0) ,
-                throughput_feasible_total,
+                max(np.sum(Min_Rate - np.sum(Base_ue_ThroughtpusTable,axis=0)),0),
                 np.sum(np.maximum( np.sum(NP_three_D_X[1]*check_conectional,axis=1) - Max_power,0)),
                 np.sum(NP_three_D_X[1]*check_conectional,axis=1)- Max_power 
                 )
@@ -86,7 +78,7 @@ def find_MaxEE(X):
     # print(max(np.sum((1-np.sum(check_conectional,axis=1))),0))
     # print(max(np.sum(Min_Rate - np.sum(Base_ue_ThroughtpusTable,axis=0))/Min_Rate,0))
     # print(max(np.sum(np.sum(NP_three_D_X[1]*check_conectional,axis=1)),0))
-    if np.all(Check_constrained):
+    if np.all(Check_constrained[:5]):
         Feasible = True
     return (Feasible,Check_constrained,Energy_efficient,constrained_violation,test_num)
 
@@ -174,7 +166,6 @@ def G(psi, Theta):
 #         return self.power
 
 
-
 if __name__ == "__main__":
     
     
@@ -212,48 +203,42 @@ if __name__ == "__main__":
 
     obj_func = find_MaxEE
     verbose = True
-    epoch = 10
-    pop_size = 10
-    impove_HHO_feasible = []
-    HHO_feasible = []
-    for i in range(0,30):
+    epoch = 100
+    pop_size = 500
+
+    for i in range(0,1):
 
         HHO_value=HHO.HHO(find_MaxEE, lb, ub, dim, SearchAgents_no, Max_iter)
-        impove_HHO_value=HHO_combin.HHO(find_MaxEE, lb, ub, dim, SearchAgents_no, Max_iter)
+    #     impove_HHO_value=HHO_combin.HHO(find_MaxEE, lb, ub, dim, SearchAgents_no, Max_iter)
         
         
-        # md3 = SMA_combine.OriginalSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
-        # best_pos2, best_fit2, list_loss2,compare2 = md3.train()
-        # md2 = OriginalSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
-        # best_pos2, best_fit2, list_loss2,compare2 = md2.train()
+    #     # md3 = SMA_combine.OriginalSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
+    #     # best_pos2, best_fit2, list_loss2,compare2 = md3.train()
+    #     md2 = OriginalSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
+    #     best_pos2, best_fit2, list_loss2,compare2 = md2.train()
 
-        # md1 = BaseSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
-        # best_pos1, best_fit1, list_loss1, compare = md1.train()
-        # np_list_loss1=np.array(list_loss1)
-        # np_list_loss2=np.array(list_loss2)
-        impove_HHO_feasible.append(impove_HHO_value.best[0])
-        HHO_feasible.append(HHO_value.best[0])
-        if i==0:
-            ALL_HHO = HHO_value.convergence
-            ALL_impove_HHO = impove_HHO_value.convergence
-            
-            
-            # ALL_np_list_loss1 = np_list_loss1
-            # ALL_np_list_loss2 = np_list_loss2
-        else:
-            ALL_HHO = (ALL_HHO+HHO_value.convergence)/2
-            ALL_impove_HHO = (ALL_impove_HHO+impove_HHO_value.convergence)/2
-            # ALL_np_list_loss1 = (ALL_np_list_loss1+np_list_loss1)/2
-            # ALL_np_list_loss2 = (ALL_np_list_loss2+np_list_loss2)/2
+    #     md1 = BaseSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
+    #     best_pos1, best_fit1, list_loss1, compare = md1.train()
+    #     np_list_loss1=np.array(list_loss1)
+    #     np_list_loss2=np.array(list_loss2)
+    #     if i==0:
+    #         ALL_HHO = HHO_value.convergence
+    #         ALL_impove_HHO = impove_HHO_value.convergence
+    #         ALL_np_list_loss1 = np_list_loss1
+    #         ALL_np_list_loss2 = np_list_loss2
+    #     else:
+    #         ALL_HHO = (ALL_HHO+HHO_value.convergence)/2
+    #         ALL_impove_HHO = (ALL_impove_HHO+impove_HHO_value.convergence)/2
+    #         ALL_np_list_loss1 = (ALL_np_list_loss1+np_list_loss1)/2
+    #         ALL_np_list_loss2 = (ALL_np_list_loss2+np_list_loss2)/2
 
-    print(f'impove_HHO_feasible : {impove_HHO_feasible}')
-    print(f'HHO_feasible : {HHO_feasible}')
-    plt.plot(ALL_HHO,label='HHO')
-    plt.plot(ALL_impove_HHO,label='impove_HHO')
+
+    # plt.plot(ALL_HHO,label='HHO')
+    # plt.plot(ALL_impove_HHO,label='impove_HHO')
     # plt.plot(ALL_np_list_loss1 ,label='Original SMA')
     # plt.plot(ALL_np_list_loss2,label='Base SMA')
-    plt.legend()
-    plt.savefig("SMA.jpg")
-    plt.show()
+    # plt.legend()
+    # plt.savefig("SMA.jpg")
+    # plt.show()
 
 

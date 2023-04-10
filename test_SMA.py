@@ -1,6 +1,6 @@
 from SMA import BaseSMA, OriginalSMA
 from numpy import sum, pi, exp, sqrt, cos
-
+import main
 
 ## You can create whatever function you want here
 def func_sum(solution):
@@ -29,10 +29,13 @@ problem_size = 100
 
 
 ## Setting parameters
-obj_func = func_ackley
+obj_func = main.find_MaxEE
 verbose = True
 epoch = 1000
 pop_size = 50
+
+
+
 
 md1 = BaseSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
 best_pos1, best_fit1, list_loss1 = md1.train()

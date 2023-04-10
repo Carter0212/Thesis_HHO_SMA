@@ -39,9 +39,9 @@ problem_size = 30
     # ub=10
     # Max_iter=500
 ## Setting parameters
-obj_func = func_sum
+obj_func = f1
 verbose = True
-epoch = 500 ## iterators
+epoch = 3000 ## iterators
 pop_size = 30
 
 md1 = BaseSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)

@@ -1,7 +1,8 @@
 from numpy import where, clip, logical_and, ones, array, ceil,shape
 from numpy.random import uniform
 from copy import deepcopy
-
+import functools
+import numpy as np
 
 class Root:
     """ This is root of all Algorithms """
@@ -11,7 +12,7 @@ class Root:
 
     ID_POS = 0              # Position
     ID_FIT = 1              # Fitness
-
+    ID_COMPARE = 3
     EPSILON = 10E-10 
 
     def __init__(self, obj_func=None, lb=None, ub=None, problem_size=50, verbose=True):
@@ -67,7 +68,7 @@ class Root:
         """
         position = uniform(self.lb, self.ub)
         fitness = self.get_fitness_position(position=position, minmax=minmax)
-        return [position, fitness]
+        return [position, fitness[2],fitness]
 
     def get_fitness_position(self, position=None, minmax=1):
         """     Assumption that objective function always return the original value
@@ -77,12 +78,45 @@ class Root:
         """
         # print(self.obj_func(position))
         # print(1.0 / (self.obj_func(position) + self.EPSILON))
-        return self.obj_func(position) if minmax == 0 else 1.0 / (self.obj_func(position) + self.EPSILON)
+        # return self.obj_func(position) if minmax == 0 else 1.0 / (self.obj_func(position) + self.EPSILON)
+        ans=self.obj_func(position)
+        # ans=(ans[0],ans[1],ans[2],ans[3],ans[4],ans[5])
+        return ans
+    
+    def compare_Best(self,news,olds):
+        news=news[3]
+        olds=olds[3]
+        if news[0]==True and olds[0] == True and news[2]>olds[2]:
+            return -1
+        if news[0]==True and olds[0] == False:
+            return -1
+        if news[0]==False and olds[0] == False and news[3] < olds[3]:
+            return -1
+        return 1
 
-    def get_sorted_pop_and_global_best_solution(self, pop=None, id_fit=None, id_best=None):
+    def compare_Best_bool(self,news,olds):
+        if news[0]==True and olds[0] == True and news[2]>olds[2]:
+            return True
+        if news[0]==True and olds[0] == False:
+            return True
+        if news[0]==False and olds[0] == False and news[3] < olds[3]:
+            return True
+        return False
+
+    def get_sorted_pop_and_global_best_solution(self, pop=None, id_fit=None, id_best=None , id_comapre=None):
         """ Sort population and return the sorted population and the best position """
-        sorted_pop = sorted(pop, key=lambda temp: temp[id_fit])
-        # print(shape(sorted_pop))
+        # sorted_pop = sorted(pop, key=lambda temp: temp[id_fit])
+        print('=============================')
+        for i in pop:
+            print(i[3])
+        sorted_pop = sorted(pop, key=functools.cmp_to_key(self.compare_Best))
+        print('-----------------------------')
+        for i in sorted_pop:
+            print(i[3])
+        print('=============================')
+        # for pop in sorted_pop:
+        #     print(pop[3])
+        # exit(1)
         return sorted_pop, deepcopy(sorted_pop[id_best])
 
     def amend_position(self, position=None):
@@ -93,7 +127,9 @@ class Root:
 
     def update_sorted_population_and_global_best_solution(self, pop=None, id_best=None, g_best=None):
         """ Sort the population and update the current best position. Return the sorted population and the new current best position """
-        sorted_pop = sorted(pop, key=lambda temp: temp[self.ID_FIT])
+        # sorted_pop = sorted(pop, key=lambda temp: temp[self.ID_FIT])
+        sorted_pop = sorted(pop, key=functools.cmp_to_key(self.compare_Best))
         current_best = sorted_pop[id_best]
-        g_best = deepcopy(current_best) if current_best[self.ID_FIT] < g_best[self.ID_FIT] else deepcopy(g_best)
+        # g_best = deepcopy(current_best) if current_best[self.ID_FIT] < g_best[self.ID_FIT] else deepcopy(g_best)
+        g_best = deepcopy(current_best) if self.compare_Best_bool(current_best[self.ID_COMPARE],g_best[self.ID_COMPARE])  else deepcopy(g_best)
         return sorted_pop, g_best

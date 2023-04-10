@@ -1,12 +1,13 @@
 from numpy import where, clip, logical_and, ones, array, ceil
 from numpy.random import uniform
 from copy import deepcopy
+import sys
 
 
 class Root:
     """ This is root of all Algorithms """
 
-    ID_MIN_PROB = 0         # min problem
+    ID_MIN_PROB = -1         # min problem
     ID_MAX_PROB = float('Inf')      # max problem
 
     ID_POS = 0              # Position
@@ -69,7 +70,7 @@ class Root:
         fitness = self.get_fitness_position(position=position, minmax=minmax)
         return [position, fitness]
 
-    def get_fitness_position(self, position=None, minmax=0):
+    def get_fitness_position(self, position=None, minmax=1):
         """     Assumption that objective function always return the original value
         :param position: 1-D numpy array
         :param minmax: 0- min problem, 1 - max problem
@@ -94,3 +95,13 @@ class Root:
         current_best = sorted_pop[id_best]
         g_best = deepcopy(current_best) if current_best[self.ID_FIT] < g_best[self.ID_FIT] else deepcopy(g_best)
         return sorted_pop, g_best
+    
+    def progress(self, count, total, status=''):
+        bar_len = 50
+        filled_len = int(round(bar_len * count / float(total)))
+
+        percents = round(100.0 * count / float(total), 1)
+        bar = '|' * filled_len + '_' * (bar_len - filled_len)
+
+        sys.stdout.write('\r%s %s%s %s' % (bar, percents, '%', status))
+        sys.stdout.flush()

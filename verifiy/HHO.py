@@ -15,6 +15,7 @@ import numpy
 import math
 from solution import solution
 import time
+import matplotlib.pyplot as plt
 
 
 
@@ -29,7 +30,7 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     
     # initialize the location and Energy of the rabbit
     Rabbit_Location=numpy.zeros(dim)
-    Rabbit_Energy=float("inf")  #change this to -inf for maximization problems
+    Rabbit_Energy=float("-inf")  #change this to -inf for maximization problems
     
     if not isinstance(lb, list):
         lb = [lb for _ in range(dim)]
@@ -67,7 +68,7 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
             fitness=objf(X[i,:])
             
             # Update the location of Rabbit
-            if fitness<Rabbit_Energy: # Change this to > for maximization problem
+            if fitness>Rabbit_Energy: # Change this to > for maximization problem
                 Rabbit_Energy=fitness 
                 Rabbit_Location=X[i,:].copy() 
             
@@ -151,7 +152,7 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     s.objfname=objf.__name__
     s.best =Rabbit_Energy 
     s.bestIndividual = Rabbit_Location
-    
+    # s.pri()
     
     
     return s
@@ -165,7 +166,7 @@ def Levy(dim):
     step = numpy.divide(u,zz)
     return step
 
-def f1(x):
+def f2(x):
     ans=1
     for i in x:
         ans*=abs(i)
@@ -182,16 +183,22 @@ if __name__ == "__main__":
     import statistics
     f1_list_total=[]
     dim_list=[30,100,500,1000]
-    SearchAgents_no=30
-    lb=10
-    ub=10
-    Max_iter=500
-    for dim in dim_list:
-        f1_list=[]
-        for i in range(30):
-            f1_list.append(HHO(f1, lb, ub, dim, SearchAgents_no, Max_iter))
-        f1_list_total.append(f1_list)
-    for index,f1_list in enumerate(f1_list_total):
-        print(f'dim={dim_list[index]}')
-        print(sum(f1.best for f1 in f1_list)/len(f1_list))
-        print(statistics.stdev(f1.best for f1 in f1_list))
+    dim = 20
+    SearchAgents_no=500
+    lb=0
+    ub=1000
+    Max_iter=100
+    ans=HHO(f2, lb, ub, dim, SearchAgents_no, Max_iter)
+    plt.plot(ans.convergence,label='HHO')
+    plt.legend()
+    plt.savefig("HHO_mould.jpg")
+    plt.show()
+    # for dim in dim_list:
+    #     f1_list=[]
+    #     for i in range(30):
+    #         f1_list.append(HHO(f2, lb, ub, dim, SearchAgents_no, Max_iter))
+    #     f1_list_total.append(f1_list)
+    # for index,f1_list in enumerate(f1_list_total):
+    #     print(f'dim={dim_list[index]}')
+    #     print(sum(f1.best for f1 in f1_list)/len(f1_list))
+    #     print(statistics.stdev(f1.best for f1 in f1_list))

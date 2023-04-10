@@ -56,6 +56,7 @@ class BaseSMA(Root):
 
             # Update the Position of search agents
             for i in range(0, self.pop_size):
+                
                 if uniform() < self.z:  # Eq.(2.7)
                     pos_new = uniform(self.lb, self.ub)
                 else:
@@ -75,7 +76,7 @@ class BaseSMA(Root):
                 fit_new = self.get_fitness_position(pos_new)
                 pop[i][self.ID_POS] = pos_new
                 pop[i][self.ID_FIT] = fit_new
-
+                
             # Sorted population and update the global best
             pop, g_best = self.update_sorted_population_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
             self.loss_train.append(g_best[self.ID_FIT])
