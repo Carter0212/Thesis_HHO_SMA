@@ -8,9 +8,9 @@
 
 
 from numpy.random import uniform, choice
-from numpy import abs, zeros, log10, where, arctanh, tanh ,shape
+from numpy import abs, zeros, log10, where, arctanh, tanh
 from root import Root
-import random
+
 
 class BaseSMA(Root):
     """
@@ -22,6 +22,7 @@ class BaseSMA(Root):
     """
 
     ID_WEI = 2
+    ID_COMPARE = 3
 
     def __init__(self, obj_func=None, lb=None, ub=None, problem_size=50, verbose=True, epoch=750, pop_size=100, z=0.03):
         Root.__init__(self, obj_func, lb, ub, problem_size, verbose)
@@ -29,28 +30,32 @@ class BaseSMA(Root):
         self.pop_size = pop_size
         self.z = z
 
-    def create_solution(self, minmax=1):
+    def create_solution(self, minmax=0):
         pos = uniform(self.lb, self.ub)
-        fit = self.get_fitness_position(pos,minmax)
+        fit = self.get_fitness_position(pos)
         weight = zeros(self.problem_size)
-        return [pos, fit, weight]
+        return [pos, fit[2], weight,fit]
 
     def train(self):
-        pop = [self.create_solution(1) for _ in range(self.pop_size)]
-        pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB)      # Eq.(2.6)
+        pop = [self.create_solution() for _ in range(self.pop_size)]
+        pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.ID_COMPARE)      # Eq.(2.6)
 
         for epoch in range(self.epoch):
-            print(self.ID_FIT)
+            
             s = pop[0][self.ID_FIT] - pop[-1][self.ID_FIT] + self.EPSILON  # plus eps to avoid denominator zero
-
+            
             # calculate the fitness weight of each slime mold
             for i in range(0, self.pop_size):
                 # Eq.(2.5)
+                if s == 0 or abs(pop[0][self.ID_FIT] - pop[i][self.ID_FIT]) < 0:
+                    print(f's={s}')
+                    print(abs(pop[0][self.ID_FIT] - pop[i][self.ID_FIT]))
+                    exit(1)
                 if i <= int(self.pop_size / 2):
-                    pop[i][self.ID_WEI] = 1 + uniform(0, 1, self.problem_size) * log10((pop[0][self.ID_FIT] - pop[i][self.ID_FIT]) / s + 1)
+                    pop[i][self.ID_WEI] = 1 + uniform(0, 1, self.problem_size) * log10(abs((pop[0][self.ID_FIT] - pop[i][self.ID_FIT])) / s + 1)
                 else:
-                    pop[i][self.ID_WEI] = 1 - uniform(0, 1, self.problem_size) * log10((pop[0][self.ID_FIT] - pop[i][self.ID_FIT]) / s + 1)
-
+                    pop[i][self.ID_WEI] = 1 - uniform(0, 1, self.problem_size) * log10(abs((pop[0][self.ID_FIT] - pop[i][self.ID_FIT])) / s + 1)
+                
             a = arctanh(-((epoch + 1) / self.epoch) + 1)                        # Eq.(2.4)
             b = 1 - (epoch + 1) / self.epoch
 
@@ -74,16 +79,16 @@ class BaseSMA(Root):
                 pos_new = self.amend_position(pos_new)
                 fit_new = self.get_fitness_position(pos_new)
                 pop[i][self.ID_POS] = pos_new
-                pop[i][self.ID_FIT] = fit_new
+                pop[i][self.ID_FIT] = fit_new[2]
+                pop[i][self.ID_COMPARE] = fit_new
 
             # Sorted population and update the global best
             pop, g_best = self.update_sorted_population_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
-            
             self.loss_train.append(g_best[self.ID_FIT])
             if self.verbose:
-                print("> Epoch: {}, Best fit: {}".format(epoch + 1, 1/g_best[self.ID_FIT]))
+                print("> Epoch: {}, Best fit: {}".format(epoch + 1, g_best[self.ID_COMPARE]))
         self.solution = g_best
-        return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train
+        return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train ,g_best[self.ID_COMPARE]
 
 
 class OriginalSMA(Root):
@@ -95,11 +100,7 @@ class OriginalSMA(Root):
     """
 
     ID_WEI = 2
-
-    
- 
-
-
+    ID_COMPARE=3
     def __init__(self, obj_func=None, lb=None, ub=None, problem_size=50, verbose=True, epoch=750, pop_size=100, z=0.03):
         Root.__init__(self, obj_func, lb, ub, problem_size, verbose)
         self.epoch = epoch
@@ -110,7 +111,7 @@ class OriginalSMA(Root):
         pos = uniform(self.lb, self.ub)
         fit = self.get_fitness_position(pos)
         weight = zeros(self.problem_size)
-        return [pos, fit, weight]
+        return [pos, fit[2], weight,fit]
 
     def train(self):
         pop = [self.create_solution() for _ in range(self.pop_size)]
@@ -122,17 +123,20 @@ class OriginalSMA(Root):
             # calculate the fitness weight of each slime mold
             for i in range(0, self.pop_size):
                 # Eq.(2.5)
+                if s == 0 or abs(pop[0][self.ID_FIT] - pop[i][self.ID_FIT]) < 0:
+                    print(f's={s}')
+                    print(abs(pop[0][self.ID_FIT] - pop[i][self.ID_FIT]))
+                    exit(1)
                 if i <= int(self.pop_size / 2):
-                    pop[i][self.ID_WEI] = 1 + uniform(0, 1, self.problem_size) * log10((pop[0][self.ID_FIT] - pop[i][self.ID_FIT]) / s + 1)
+                    pop[i][self.ID_WEI] = 1 + uniform(0, 1, self.problem_size) * log10(abs((pop[0][self.ID_FIT] - pop[i][self.ID_FIT])) / s + 1)
                 else:
-                    pop[i][self.ID_WEI] = 1 - uniform(0, 1, self.problem_size) * log10((pop[0][self.ID_FIT] - pop[i][self.ID_FIT]) / s + 1)
+                    pop[i][self.ID_WEI] = 1 - uniform(0, 1, self.problem_size) * log10(abs((pop[0][self.ID_FIT] - pop[i][self.ID_FIT])) / s + 1)
 
             a = arctanh(-((epoch + 1) / self.epoch) + 1)                        # Eq.(2.4)
             b = 1 - (epoch + 1) / self.epoch
 
             # Update the Position of search agents
             for i in range(0, self.pop_size):
-                
                 if uniform() < self.z:                                          # Eq.(2.7)
                     pop[i][self.ID_POS] = uniform(self.lb, self.ub)
                 else:
@@ -153,12 +157,13 @@ class OriginalSMA(Root):
                 pos_new = self.amend_position(pop[i][self.ID_POS])
                 fit_new = self.get_fitness_position(pos_new)
                 pop[i][self.ID_POS] = pos_new
-                pop[i][self.ID_FIT] = fit_new
+                pop[i][self.ID_FIT] = fit_new[2]
+                pop[i][self.ID_COMPARE] = fit_new
 
             # Sorted population and update the global best
             pop, g_best = self.update_sorted_population_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
             self.loss_train.append(g_best[self.ID_FIT])
             if self.verbose:
-                print("> Epoch: {}, Best fit: {}".format(epoch + 1, g_best[self.ID_FIT]))
+                print("> Epoch: {}, Best fit: {}".format(epoch + 1, g_best[self.ID_COMPARE]))
         self.solution = g_best
-        return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train
+        return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train,g_best[self.ID_COMPARE]

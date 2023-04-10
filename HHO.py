@@ -7,6 +7,18 @@ from solution import solution
 import time
 import numpy as np
 
+def compare_Best(news,olds,t):
+    if t==0:
+        return True
+    if news[0]==True and olds[0] == True and news[2]>olds[2]:
+        return True
+    if news[0]==True and olds[0] == False:
+       return True
+    if news[0]==False and olds[0] == False and news[3] < olds[3]:
+        return True
+    return False
+
+
 
 def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
 
@@ -15,7 +27,6 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     # lb=-100
     # ub=100
     # Max_iter=500
-        
     
     # initialize the location and Energy of the rabbit
     Rabbit_Location=numpy.zeros(dim)
@@ -33,7 +44,6 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     #Initialize convergence
     convergence_curve=numpy.zeros(Max_iter)
     
-    
     ############################
     s=solution()
 
@@ -42,11 +52,13 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     timerStart=time.time() 
     s.startTime=time.strftime("%Y-%m-%d-%H-%M-%S")
     ############################
-    
+
     t=0  # Loop counter
     
     # Main loop
     while t<Max_iter:
+
+        
         for i in range(0,SearchAgents_no):
             
             # Check boundries
@@ -54,18 +66,22 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
             X[i,:]=numpy.clip(X[i,:], lb, ub)
             
             # fitness of locations
+            
             fitness=objf(X[i,:])
             # print(fitness)
             
             # Update the location of Rabbit
-            if fitness>Rabbit_Energy: # Change this to > for maximization problem
+            if compare_Best(fitness,Rabbit_Energy,t): # Change this to > for maximization problem
                 Rabbit_Energy=fitness 
                 Rabbit_Location=X[i,:].copy() 
-            
+        
         E1=2*(1-(t/Max_iter)) # factor to show the decreaing energy of rabbit    
         
         # Update the location of Harris' hawks 
         for i in range(0,SearchAgents_no):
+
+
+            
 
             E0=2*random.random()-1  # -1<E0<1
             Escaping_Energy=E1*(E0)  # escaping energy of rabbit Eq. (3) in the paper
@@ -109,29 +125,31 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
                     X1=Rabbit_Location-Escaping_Energy*abs(Jump_strength*Rabbit_Location-X[i,:])
                     X1 = numpy.clip(X1, lb, ub)
 
-                    if objf(X1)< fitness: # improved move?
+                    if compare_Best(objf(X1),fitness,t): # improved move?
                         X[i,:] = X1.copy()
                     else: # hawks perform levy-based short rapid dives around the rabbit
                         X2=Rabbit_Location-Escaping_Energy*abs(Jump_strength*Rabbit_Location-X[i,:])+numpy.multiply(numpy.random.randn(dim),Levy(dim))
                         X2 = numpy.clip(X2, lb, ub)
-                        if objf(X2)< fitness:
+                        if compare_Best(objf(X2),fitness,t):
                             X[i,:] = X2.copy()
                 if r<0.5 and abs(Escaping_Energy)<0.5:   # Hard besiege Eq. (11) in paper
                      Jump_strength=2*(1-random.random())
                      X1=Rabbit_Location-Escaping_Energy*abs(Jump_strength*Rabbit_Location-X.mean(0))
                      X1 = numpy.clip(X1, lb, ub)
                      
-                     if objf(X1)< fitness: # improved move?
+                     if compare_Best(objf(X1),fitness,t): # improved move?
                         X[i,:] = X1.copy()
+                        
                      else: # Perform levy-based short rapid dives around the rabbit
                          X2=Rabbit_Location-Escaping_Energy*abs(Jump_strength*Rabbit_Location-X.mean(0))+numpy.multiply(numpy.random.randn(dim),Levy(dim))
+                         
                          X2 = numpy.clip(X2, lb, ub)
-                         if objf(X2)< fitness:
+                         if compare_Best(objf(X2),fitness,t):
                             X[i,:] = X2.copy()
-                
-        convergence_curve[t]=Rabbit_Energy
+                                 
+        convergence_curve[t]=Rabbit_Energy[2]
         if (t%1==0):
-               print(['At iteration '+ str(t)+ ' the best fitness is '+ str(Rabbit_Energy)])
+                print(['At iteration '+ str(t)+ ' the best fitness is '+ str(Rabbit_Energy)])
         t=t+1
     
     timerEnd=time.time()  
