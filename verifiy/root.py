@@ -96,12 +96,4 @@ class Root:
         g_best = deepcopy(current_best) if current_best[self.ID_FIT] < g_best[self.ID_FIT] else deepcopy(g_best)
         return sorted_pop, g_best
     
-    def progress(self, count, total, status=''):
-        bar_len = 50
-        filled_len = int(round(bar_len * count / float(total)))
-
-        percents = round(100.0 * count / float(total), 1)
-        bar = '|' * filled_len + '_' * (bar_len - filled_len)
-
-        sys.stdout.write('\r%s %s%s %s' % (bar, percents, '%', status))
-        sys.stdout.flush()
+    

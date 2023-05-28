@@ -1,14 +1,18 @@
 import abc
 import sys
 import time
+import random
 from func_timeout import func_timeout, FunctionTimedOut
 import matplotlib.pyplot as plt
-import random
 import math
 from solution import solution
 import numpy as np
 import functools
 from typing import Optional, Callable, Any
+import os
+import datetime
+import shutil
+import csv
 
 class Root(abc.ABC):
     """ This is root of all Algorithms """
@@ -96,11 +100,15 @@ class Root(abc.ABC):
     
     def update_sorted_population_and_global_best_solution(self, pop=None, id_best=None, g_best=None,sort_func=None,compare_func_bool=None,original_pop=None):
         """ Sort the population and update the current best position. Return the sorted population and the new current best position """
-        combin_pop=np.append(pop,original_pop,axis=0)
+        if original_pop != None:
+            
+            combin_pop=np.append(pop,original_pop,axis=0)
+        else:
+            combin_pop = pop
 
         cmp_func=functools.cmp_to_key(sort_func)
         np_cmp_func =np.vectorize(cmp_func)
-        sort_data=np_cmp_func(combin_pop[:,1])
+        sort_data=np_cmp_func(combin_pop[:,self.ID_FIT])
         ans_index=np.argsort(sort_data)
         sorted_pop=combin_pop[ans_index]
         sorted_pop=sorted_pop[:self.problem_size]
@@ -132,12 +140,66 @@ class Root(abc.ABC):
         return NotImplemented
 
     
-    def mutil_run(self, run_times: int, aggrigator: Optional[Callable[[Any], None]] = None) -> None:
-        for i in range(run_times):
+    def mutil_run(self, run_times,seed_list):
+        self.mutil_convergence = []
+        self.mutil_constrained_violation_curve = []
+        self.mutil_dimension = []
+        Folder_Path = f'./{datetime.date.today()}/{self.__class__.__name__}'
+        if not os.path.isdir(Folder_Path):
+            os.makedirs(Folder_Path,mode=0o777)
+            
+        
+        # self.mutil_bestIndividual = []
+        for time in range(run_times):
+            np.random.seed(seed_list[time])
+            random.seed(seed_list[time])
+            Folder_Path_time= f'{Folder_Path}/{time}'
+            if not os.path.isdir(Folder_Path_time):
+                os.makedirs(Folder_Path_time,mode=0o777)
+            else:
+                shutil.rmtree(Folder_Path_time)
+                os.makedirs(Folder_Path_time,mode=0o777)
+            
             self.run()
-            if aggrigator is not None:
-                aggrigator(self, ...)
-    
+            self.save_data(Folder_Path_time)
+            self.mutil_convergence.append(self.convergence)
+            self.mutil_constrained_violation_curve.append(self.constrained_violation_curve)
+            self.mutil_dimension.append(self.dimension)
+            if time == 0:
+                self.avg_convergence =self.convergence
+                self.avg_constrained_violation_curve =self.constrained_violation_curve
+                self.avg_dimension = self.dimension
+                self.avg_bestIndividual = self.bestIndividual
+            else:
+                self.avg_convergence = (self.avg_convergence+ self.convergence)/2
+                self.avg_constrained_violation_curve = (self.avg_constrained_violation_curve + self.constrained_violation_curve)/2
+                self.avg_dimension =(self.avg_dimension + self.dimension)/2
+                self.avg_bestIndividual =  (self.avg_bestIndividual + self.bestIndividual )/2
+
+    def save_data(self,Folder_Path_time):
+        # with open(f'{Folder_Path_time}/convergence.csv','w',newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerows(self.convergence)
+        np.savetxt(f'{Folder_Path_time}/convergence.csv',self.convergence,delimiter=',')
+
+        # with open(f'{Folder_Path_time}/constrained_violation_curve.csv','w',newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerows(self.constrained_violation_curve)
+        np.savetxt(f'{Folder_Path_time}/constrained_violation_curve.csv',
+                   self.constrained_violation_curve,delimiter=',')
+        
+        # with open(f'{Folder_Path_time}/dimension.csv','w',newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerows(self.dimension)
+        # np.savetxt(f'{Folder_Path_time}/dimension.csv',self.dimension,delimiter=',')
+
+        # with open(f'{Folder_Path_time}/bestIndividual.csv','w',newline='') as file:
+        #     writer = csv.writer(file)
+        #     writer.writerows(self.bestIndividual)
+        np.savetxt(f'{Folder_Path_time}/bestIndividual.csv',self.bestIndividual,delimiter=',')
+
+
+
     def init_params(self):
         self.startTime=None 
         self.endTime=None
@@ -148,6 +210,7 @@ class Root(abc.ABC):
         self.best=None
         self.bestIndividual=None
         self.ALLData=None
+        self.posRecord=[]
 
         
     def show_time(self):

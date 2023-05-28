@@ -1,6 +1,8 @@
 import numpy as np
 import math
 import random
+import sys
+import matplotlib.pyplot as plt
 N=-174
 X=10**((N-30)/10)
 SINR=1/(X*(10**9))
@@ -18,7 +20,10 @@ constrained_num=6
 
 import csv
 
-
+def throughtput(num_power,num_distance):    
+    receive_power=P_ij_r(num_power*0.001,lambd,num_distance,alpha,Rayleigh_fading())
+    throughtput = R_ij(W,1, SNR_ij(receive_power,W,N_0))
+    return throughtput
 
 
 def calculator_throughtput(NP_three_D_X,check_conectional,bs_positions,ue_positions):
@@ -29,6 +34,7 @@ def calculator_throughtput(NP_three_D_X,check_conectional,bs_positions,ue_positi
                 receive_power=P_ij_r(NP_three_D_X[1][base][ue]*0.001,lambd,euclidean_distance(bs_positions[base], ue_positions[ue]),alpha,Rayleigh_fading())
                 throughtput = R_ij(W,np.sum(check_conectional,axis=1)[base], SNR_ij(receive_power,W,N_0))
                 throughtput_table[base][ue] = throughtput
+                
     return  throughtput_table
         
 
@@ -36,7 +42,8 @@ def Rayleigh_fading():
     x = np.random.normal(loc=0,scale=1)
     y = np.random.normal(loc=0,scale=1)
     z =  np.sqrt(0.5) * (x + 1j*y)
-    return np.abs(z)                
+    # return np.abs(z)     
+    return 1           
 
 
 def euclidean_distance(p1, p2):
@@ -101,18 +108,39 @@ def read_csv():
     return float_tuples
     
 if '__main__' == __name__:
-    deploy=read_csv()
-    bs_positions = deploy[0]
-    ue_positions = deploy[1]
-    connect_power=[1000 for i in range(2*base_numbers*ue_numbers)]
-    NP_three_D_X=np.array(connect_power)
-    three_D_X = NP_three_D_X.reshape(2,base_numbers,ue_numbers)
-    NP_three_D_X=np.array(three_D_X)
-    check_conectional = (NP_three_D_X[0] > 500)
+    # deploy=read_csv()
+    # bs_positions = deploy[0]
+    # ue_positions = deploy[1]
+    # connect_power=[1000 for i in range(2*base_numbers*ue_numbers)]
+    # NP_three_D_X=np.array(connect_power)
+    # three_D_X = NP_three_D_X.reshape(2,base_numbers,ue_numbers)
+    # NP_three_D_X=np.array(three_D_X)
+    # check_conectional = (NP_three_D_X[0] > 500)
     
-    ans=calculator_throughtput(NP_three_D_X,check_conectional,bs_positions,ue_positions)
-    ans=np.array(ans)
-    print(np.shape(ans))
-    print(np.sum(ans,axis=0))
-    print(np.sum(NP_three_D_X[1],axis=1))
-    print(np.sum(ans)/np.sum(check_conectional*NP_three_D_X[1]))
+    # ans=calculator_throughtput(NP_three_D_X,check_conectional,bs_positions,ue_positions)
+    
+    # ans=np.array(ans)
+    
+    np.set_printoptions(threshold=sys.maxsize)
+    # print(ans)
+    # print(f'True : {np.sum(tureFlase_ans!=0)}')
+    # print(f'False : {np.sum(tureFlase_ans==0)}')
+    conecation = np.linspace(1,10,10)
+    num_power = 1000
+    num_distance = np.linspace(1,20,20)
+    conecation,num_distance = np.meshgrid(conecation,num_distance)
+    ans=throughtput(num_power/conecation,num_distance)
+    ans=ans*conecation
+    ans[ans<(10**9)] = np.nan
+    print(np.max(ans))
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    # ax.imshow(tureFlase_ans, aspect='auto', cmap=plt.cm.gray, interpolation='nearest')
+    ax.contourf(conecation,num_distance,ans)
+    plt.show()
+    # print(np.shape(ans))
+    # print(np.sum(ans,axis=0))
+    # print(np.sum(NP_three_D_X[1],axis=1))
+    # print(np.sum(ans)/np.sum(check_conectional*NP_three_D_X[1]))

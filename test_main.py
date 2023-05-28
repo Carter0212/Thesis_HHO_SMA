@@ -1,21 +1,23 @@
 
 import numpy as np
-from Alg import HHO,BaseSMA,OriginalSMA,HHO_SMA
+from Alg import HHO,BaseSMA,OriginalSMA,HHO_SMA,GA,HHO_SMA_ch,HHO_SMA_Chaos,HHO_SMA_DE
 import math
 import Alg
 import random
 import matplotlib.pyplot as plt
 from numpy import sum, pi, exp, sqrt, cos
 import csv
+import pandas as pd
+from pandas.core.frame import DataFrame
 W = (10**9) ##(Hz)
 alpha=2 ##(Path loss exponent)
 lambd = 0.005 #(m)
-Min_Rate = 8*(10**8) #(bit/s)
+Min_Rate = (10**8) #(bit/s)
 N_0=-174 #(dBm/Hz)
 Min_Power = 0 #(mW)
 Max_power = 1000 #(mW)
 base_numbers = 4
-ue_numbers = 10
+ue_numbers = 5
 constrained_num=6
 
 def find_MaxEE(X):
@@ -34,6 +36,7 @@ def find_MaxEE(X):
 
 
     ## C2 constrained solution
+    # 0
     if np.all((NP_three_D_X[1] >= 0) & (NP_three_D_X[1] <= 1000)):
         Check_constrained[1] = True
 
@@ -41,33 +44,42 @@ def find_MaxEE(X):
     check_conectional = (NP_three_D_X[0] > 500)
     if np.all(np.sum(check_conectional,axis=1) > 0):
         Check_constrained[2] = True
+    Zero_mask_connect_BS = np.where(np.sum(check_conectional,axis=1) <= 0)
 
     ## C4 constrained solution
     if np.all(np.sum(check_conectional,axis=0) > 0):
         Check_constrained[3] = True
+    Zero_mask_connect_UE=np.where((np.sum(check_conectional,axis=1) <= 0))
 
     ## C5 constrained solution
     Base_ue_ThroughtpusTable = calculator_throughtput(NP_three_D_X,check_conectional)
     if  np.all(np.sum(Base_ue_ThroughtpusTable,axis=0) >= Min_Rate):
         Check_constrained[4] = True
+    rate_inadeuate_mask=np.where((np.sum(Base_ue_ThroughtpusTable,axis=0) < Min_Rate))
 
     ## C6 constrained solution
     if  np.all(np.sum(NP_three_D_X[1]*check_conectional,axis=1)<= Max_power) :
         Check_constrained[5] = True
+    Over_Power_mask=np.where((np.sum(NP_three_D_X[1]*check_conectional,axis=1)> Max_power))
 
     Energy_efficient = np.sum(Base_ue_ThroughtpusTable) / (np.sum(NP_three_D_X[1]*check_conectional) + 10E-10)
-    constrained_violation = (   
-        np.sum(np.maximum( (1-np.sum(check_conectional,axis=0)) ,0) ) +   
-        np.sum(np.maximum( (1-np.sum(check_conectional,axis=1)) ,0) ) +
+    constrained_violation = (
+        (not Check_constrained[0])*10000+
+        (not Check_constrained[1])*10000+      
+        np.sum(np.maximum( (1-np.sum(check_conectional,axis=0)) ,0) )*10000 +   
+        np.sum(np.maximum( (1-np.sum(check_conectional,axis=1)) ,0) )*10000 +
         np.sum(np.maximum( ( Min_Rate - np.sum(Base_ue_ThroughtpusTable,axis=0)) / (10**6) , 0))+
-        np.sum(np.maximum( np.sum(NP_three_D_X[1]*check_conectional,axis=1) - Max_power, 0 ))
+        np.sum(np.maximum( np.sum(NP_three_D_X[1]*check_conectional,axis=1) - Max_power, 0 )*100)
         )
-    test_num = (np.sum(np.maximum( (1-np.sum(check_conectional,axis=0)) ,0) ),   
+    test_num = ((not Check_constrained[0])*10000,
+                (not Check_constrained[1])*10000,
+                np.sum(np.maximum( (1-np.sum(check_conectional,axis=0)) ,0) ),   
                 np.sum(np.maximum( (1-np.sum(check_conectional,axis=1)) ,0) ),
                 np.sum(np.maximum( ( Min_Rate - np.sum(Base_ue_ThroughtpusTable,axis=0)) / (10**6) , 0)),
                 np.sum(np.maximum( np.sum(NP_three_D_X[1]*check_conectional,axis=1) - Max_power, 0 )),
                 np.sum(NP_three_D_X[1]*check_conectional,axis=1)- Max_power 
                 )
+    mask = np.array([Zero_mask_connect_BS,Zero_mask_connect_UE,rate_inadeuate_mask,Over_Power_mask])
     # every_ue_throughput=0
     # for i in range(Base_ue_ThroughtpusTable.size):
     #     if Base_ue_ThroughtpusTable[i] != 0:
@@ -94,9 +106,9 @@ def find_MaxEE(X):
 
     #     )
     
-    if np.all(Check_constrained[:5]):
+    if np.all(Check_constrained):
         Feasible = True
-    return (Feasible,Check_constrained,Energy_efficient,constrained_violation,test_num)
+    return (Feasible,Check_constrained,Energy_efficient,constrained_violation,test_num,mask)
 
 def calculator_throughtput(NP_three_D_X,check_conectional):
     throughtput_table = np.zeros(np.shape(check_conectional))
@@ -181,15 +193,60 @@ def f2_compare_Best_bool(news,olds):
     if news > olds:
         return True
     return False
+
+def ResultToCsv(Alg):
+    # np.savetxt(f'{Alg.__class__.__name__}.csv',Alg.best,delimiter=",")
+
+    np.savetxt(f'{Alg.__class__.__name__}.csv',Alg.convergence,delimiter=",")
+
+def csv_to_LO(data):
+    
+    dfs=[]
+    for np_array in data:
+        df = pd.DataFrame(np_array)
+        dfs.append(df)
+    result = pd.concat(dfs)
+    result.to_csv('postion_HHO_SMA.csv',index=False)
+    
+    
+def plotBox(Algs):
+    alg_list = []
+    for Alg in Algs:
+        print(Alg.avg_bestIndividual) 
+        reshape_Alg =np.reshape(Alg.avg_bestIndividual,(2,base_numbers,ue_numbers))
+        check_conectional = (reshape_Alg[0] > 500)
+        rate_table=calculator_throughtput(reshape_Alg,check_conectional)
+        every_ue_rate=np.sum(rate_table,axis=0)
+        print(every_ue_rate)
+        alg_list.append(every_ue_rate)
+    fig, ax = plt.subplots()
+    bp = ax.boxplot(alg_list, showfliers=False)
+    positions = [i+1 for i in range(len(Algs))]
+    for i in range(len(alg_list)):
+        y = alg_list[i]
+        x = np.random.normal(i + 1, 0.04, size=len(y))
+        ax.scatter(x, y, alpha=0.5, s=8, color='black')
+    # plt.boxplot(every_ue_rate)
+    ax.set_xticklabels(['GA','SMA','HHO_DE','HHO','HHO_chaos','HHO_SMA'])
+    plt.savefig("box.jpg")
+    # plt.show()
+    plt.close()
+    csv_data = DataFrame(alg_list)
+    csv_data =csv_data.T
+    csv_data.rename(columns={0:'GA',1:'SMA',2:'HHO_DE',3:'HHO',4:'HHO_chaos',5:'HHO_SMA'},inplace=True)
+    print(csv_data)
+    csv_data.to_csv('throghput_results.csv')
     
 
 if __name__ == "__main__":
+    np.random.seed(000)
+    random.seed(000)
     # 毫米波網路覆蓋區域大小
     area_size = 20
     
     # 建立4個基站位置的列表
     bs_positions = [(6,6),(14,6),(6,14),(14,14)]
-
+    # bs_positions = [(5,5),(5,10),(5,15),(10,5),(10,10),(10,15),(15,5),(15,10),(15,15)]
     ue_positions = []
     for i in range(ue_numbers):
         x = random.uniform(0, area_size)
@@ -199,21 +256,72 @@ if __name__ == "__main__":
     function=find_MaxEE
     dimension=2*ue_numbers*base_numbers
     # dimension = 30
-    iteration=20000
+    iteration=10
     problem_size=100
     lb=0
     ub=1000
     compare_func = compare_Best
-    hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,f2_compare_Best_bool)
-    hhoSMA_1.run()
-    hho_1 = HHO(function,dimension,iteration,problem_size,lb,ub,compare_func,f2_compare_Best_bool)
-    hho_1.run()
-    # OriginalSMA_1=OriginalSMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
-    # OriginalSMA_1.run()
+    parents_portion = 0.3
+    mutation_prob = 0.1
+    crossover_prob = 0.7
+    elit_ratio = 0.01
+    cross_type = 'uniform'
+    run_times=25
+    random_seed_list = random.sample(range(1, 1000), run_times)
     
-    # plt.plot(OriginalSMA_1.convergence,label='BaseSMA')
-    plt.plot(hho_1.convergence,label='HHO')
-    plt.plot(hhoSMA_1.convergence,label='HHO_impove')
-    plt.legend()
-    plt.savefig("HHO_mould.jpg")
-    plt.show()
+    Ga1 =GA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool,parents_portion,mutation_prob,crossover_prob,elit_ratio,cross_type)
+    Ga1.mutil_run(run_times,random_seed_list)
+    OriginalSMA_1=OriginalSMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    OriginalSMA_1.mutil_run(run_times,random_seed_list)
+    
+    hhoSMA_DE_1 = HHO_SMA_DE(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    hhoSMA_DE_1.mutil_run(run_times,random_seed_list)
+    # hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,f2_compare_Best_bool,ue_numbers,base_numbers)
+    hho_1 = HHO(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    hho_1.mutil_run(run_times,random_seed_list)
+    
+    hhoSMA_chaos_1 = HHO_SMA_Chaos(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    hhoSMA_chaos_1.mutil_run(run_times,random_seed_list)
+    hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    hhoSMA_1.mutil_run(run_times,random_seed_list)
+
+    fig_EE,ax_EE = plt.subplots()
+    fig_violation,ax_violation = plt.subplots()
+    ax_EE.plot(Ga1.avg_convergence,label='GA')
+    ax_EE.plot(OriginalSMA_1.avg_convergence,label='SMA')
+    ax_EE.plot(hhoSMA_DE_1.avg_convergence,label='HHO_DE')
+    ax_EE.plot(hho_1.avg_convergence,label='HHO')
+    ax_EE.plot(hhoSMA_chaos_1.avg_convergence,label='HHO_chaos')
+    ax_EE.plot(hhoSMA_1.avg_convergence,label='HHO_SMA')
+    fig_EE.legend()
+    ax_violation.plot(Ga1.avg_constrained_violation_curve,label='GA')
+    ax_violation.plot(OriginalSMA_1.avg_constrained_violation_curve,label='SMA')
+    ax_violation.plot(hhoSMA_DE_1.avg_constrained_violation_curve,label='HHO_DE')
+    ax_violation.plot(hho_1.avg_constrained_violation_curve,label='HHO')
+    ax_violation.plot(hhoSMA_chaos_1.avg_constrained_violation_curve,label='HHO_chaos')
+    ax_violation.plot(hhoSMA_1.avg_constrained_violation_curve,label='HHO_SMA')
+    
+    fig_violation.legend()
+    fig_EE.savefig("EE.jpg")
+    fig_violation.savefig("violation.jpg")
+    plotBox([Ga1,OriginalSMA_1,hhoSMA_DE_1,hho_1,hhoSMA_chaos_1,hhoSMA_1])
+    # fig_violation.savefig("HHO_inv.jpg")
+    # fig_EE.savefig("HHO_EE.jpg")
+    # # csv_to_LO(hhoSMA_1.posRecord)
+    # # csv_to_LO(hho_1.posRecord)
+    
+    # # ResultToCsv(hhoSMA_1)
+    # # # ResultToCsv(hho_1)
+    # # # ResultToCsv(OriginalSMA_1)
+    # # # ResultToCsv(Ga1)
+    
+    # plotBox([hhoSMA_1])
+    # # plt.plot(Ga1.convergence,label='GA')
+    # # plt.plot(OriginalSMA_1.convergence,label='BaseSMA')
+    
+    
+    # plt.close()
+    
+    
+    
+    
