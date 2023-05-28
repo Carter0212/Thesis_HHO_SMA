@@ -32,4 +32,4 @@ if __name__ == "__main__":
     fig_violation.legend()
     fig_EE.savefig(f'{Init_Path}/EE.jpg')
     fig_violation.savefig(f'{Init_Path}/violation.jpg')
-        
+    # 
