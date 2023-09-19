@@ -62,6 +62,31 @@ class Root(abc.ABC):
         
         self.init_params()
 
+    def save_fitness_params(self, BS_FWA_distance,carrier_frequency,Antenna_gain,LOS_shadow,NLOS_shadow,N0,transmit_bandwidth):
+        self.BS_FWA_distance = BS_FWA_distance
+        BS_FWA_LOS=32.4+21*np.log10(BS_FWA_distance)+20*np.log10(carrier_frequency) #
+        BS_FWA_NLOS=32.4+31.9*np.log10(BS_FWA_distance)+20*np.log10(carrier_frequency)
+
+        BS_FWA_Gain_LOS_shdow = Antenna_gain - BS_FWA_LOS - LOS_shadow
+        BS_FWA_Gain_NLOS_shdow = Antenna_gain - BS_FWA_NLOS - NLOS_shadow
+
+        BS_FWA_Gain_LOS_shdow_multi =10**((BS_FWA_Gain_LOS_shdow)/10) #9 becuz noise power is to small that can't use in float
+
+        BS_FWA_Gain_NLOS_shdow_multi =10**((BS_FWA_Gain_NLOS_shdow)/10) #9 becuz noise power is to small that can't use in float
+
+        N0_mW = 10**((N0)/10)
+
+        BS_FWA_Gain_NLOS_shdow_N0_multi = BS_FWA_Gain_NLOS_shdow_multi / N0_mW
+        BS_FWA_Gain_LOS_shdow_N0_multi = BS_FWA_Gain_LOS_shdow_multi / N0_mW
+        
+        self.BS_FWA_Gain_NLOS_shdow_N0_multi = BS_FWA_Gain_NLOS_shdow_N0_multi
+        self.BS_FWA_Gain_LOS_shdow_N0_multi = BS_FWA_Gain_LOS_shdow_N0_multi
+        # print(BS_FWA_Gain_NLOS_shdow_N0_multi)
+        # thr_NLOS=transmit_bandwidth * np.log2(1+BS_FWA_Gain_NLOS_shdow_N0_multi*100)
+        # thr_LOS=transmit_bandwidth * np.log2(1+BS_FWA_Gain_LOS_shdow_N0_multi*100)
+
+
+
 
 
     
@@ -71,9 +96,11 @@ class Root(abc.ABC):
         #     self.ub = [self.ub for _ in range(self.dimension)]
         # self.lb = np.asarray(self.lb)
         # self.ub = np.asarray(self.ub)
-        pos = np.asarray([int (x*(self.ub-self.lb)+self.lb) for x in np.random.uniform(0,1,self.dimension)])
+        pos = np.asarray([(x*(self.ub-self.lb)+self.lb) for x in np.random.uniform(0,1,self.dimension)]).astype(int)
+        
         fit = self.get_fitness(pos)
         weight = np.zeros(self.problem_size)
+        
         return (pos, fit)
     
     def get_fitness(self, position=None, minmax=1):
@@ -85,8 +112,10 @@ class Root(abc.ABC):
         # print(self.obj_func(position))
         # print(1.0 / (self.obj_func(position) + self.EPSILON))
         # return self.obj_func(position) if minmax == 0 else 1.0 / (self.obj_func(position) + self.EPSILON)
+        # position=self.amend_position(self, position)
+        position=np.clip(position, self.lb, self.ub)
         
-        return self.obj_func(position)
+        return self.obj_func(position.round().astype(int),self.BS_FWA_Gain_LOS_shdow_N0_multi)
         # ans=(ans[0],ans[1],ans[2],ans[3],ans[4],ans[5])
 
     def get_sorted_pop_and_global_best_solution(self, pop=None, id_fit=None, id_best=None,sort_func=None):
@@ -95,6 +124,7 @@ class Root(abc.ABC):
         np_cmp_func =np.vectorize(cmp_func)
         sort_data=np_cmp_func(pop[:,1])
         ans_index=np.argsort(sort_data)
+        
         sorted_pop=pop[ans_index]
         return sorted_pop, sorted_pop[id_best].copy()
     
@@ -112,6 +142,7 @@ class Root(abc.ABC):
         ans_index=np.argsort(sort_data)
         sorted_pop=combin_pop[ans_index]
         sorted_pop=sorted_pop[:self.problem_size]
+        
         #############
         current_best = sorted_pop[id_best]
         if compare_func_bool(current_best[self.ID_FIT],g_best[self.ID_FIT]):
@@ -120,6 +151,11 @@ class Root(abc.ABC):
         return sorted_pop, g_best
     
     def amend_position(self, position=None):
+        ans=np.clip(position, self.lb, self.ub)
+        if np.where(ans<0):
+            print(ans)
+            exit(1)
+
         return np.clip(position, self.lb, self.ub)
 
     def amend_position_random(self, position=None):
@@ -140,17 +176,20 @@ class Root(abc.ABC):
         return NotImplemented
 
     
-    def mutil_run(self, run_times,seed_list):
+    def mutil_run(self, Start_run_times,End_run_times,seed_list,folder_extra_name=None):
         self.mutil_convergence = []
         self.mutil_constrained_violation_curve = []
         self.mutil_dimension = []
-        Folder_Path = f'./{datetime.date.today()}/{self.__class__.__name__}'
+        if folder_extra_name==None:
+            Folder_Path = f'./{datetime.date.today()}/{self.__class__.__name__}'
+        else:
+            Folder_Path = f'./{datetime.date.today()}/{self.__class__.__name__}/{folder_extra_name}'
         if not os.path.isdir(Folder_Path):
             os.makedirs(Folder_Path,mode=0o777)
             
         
         # self.mutil_bestIndividual = []
-        for time in range(run_times):
+        for time in range(Start_run_times,End_run_times):
             np.random.seed(seed_list[time])
             random.seed(seed_list[time])
             Folder_Path_time= f'{Folder_Path}/{time}'
@@ -162,19 +201,19 @@ class Root(abc.ABC):
             
             self.run()
             self.save_data(Folder_Path_time)
-            self.mutil_convergence.append(self.convergence)
-            self.mutil_constrained_violation_curve.append(self.constrained_violation_curve)
-            self.mutil_dimension.append(self.dimension)
-            if time == 0:
-                self.avg_convergence =self.convergence
-                self.avg_constrained_violation_curve =self.constrained_violation_curve
-                self.avg_dimension = self.dimension
-                self.avg_bestIndividual = self.bestIndividual
-            else:
-                self.avg_convergence = (self.avg_convergence+ self.convergence)/2
-                self.avg_constrained_violation_curve = (self.avg_constrained_violation_curve + self.constrained_violation_curve)/2
-                self.avg_dimension =(self.avg_dimension + self.dimension)/2
-                self.avg_bestIndividual =  (self.avg_bestIndividual + self.bestIndividual )/2
+            # self.mutil_convergence.append(self.convergence)
+            # self.mutil_constrained_violation_curve.append(self.constrained_violation_curve)
+            # self.mutil_dimension.append(self.dimension)
+            # if time == 0:
+            #     self.avg_convergence =self.convergence
+            #     self.avg_constrained_violation_curve =self.constrained_violation_curve
+            #     self.avg_dimension = self.dimension
+            #     self.avg_bestIndividual = self.bestIndividual
+            # else:
+            #     self.avg_convergence = (self.avg_convergence+ self.convergence)/2
+            #     self.avg_constrained_violation_curve = (self.avg_constrained_violation_curve + self.constrained_violation_curve)/2
+            #     self.avg_dimension =(self.avg_dimension + self.dimension)/2
+            #     self.avg_bestIndividual =  (self.avg_bestIndividual + self.bestIndividual )/2
 
     def save_data(self,Folder_Path_time):
         # with open(f'{Folder_Path_time}/convergence.csv','w',newline='') as file:

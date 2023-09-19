@@ -34,7 +34,7 @@ class BaseSMA(Root):
         pos = uniform(self.lb, self.ub)
         fit = self.get_fitness_position(pos)
         weight = zeros(self.problem_size)
-        return [pos, fit[2], weight,fit]
+        return [pos, fit, weight,fit]
 
     def train(self):
         pop = [self.create_solution() for _ in range(self.pop_size)]
@@ -79,7 +79,7 @@ class BaseSMA(Root):
                 pos_new = self.amend_position(pos_new)
                 fit_new = self.get_fitness_position(pos_new)
                 pop[i][self.ID_POS] = pos_new
-                pop[i][self.ID_FIT] = fit_new[2]
+                pop[i][self.ID_FIT] = fit_new
                 pop[i][self.ID_COMPARE] = fit_new
 
             # Sorted population and update the global best
@@ -88,7 +88,7 @@ class BaseSMA(Root):
             if self.verbose:
                 print("> Epoch: {}, Best fit: {}".format(epoch + 1, g_best[self.ID_COMPARE]))
         self.solution = g_best
-        return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train ,g_best[self.ID_COMPARE]
+        return g_best[self.ID_POS], g_best[self.ID_FIT], self.loss_train 
 
 
 class OriginalSMA(Root):
@@ -161,7 +161,7 @@ class OriginalSMA(Root):
                 pop[i][self.ID_COMPARE] = fit_new
 
             # Sorted population and update the global best
-            pop, g_best = self.update_sorted_population_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
+            pop, g_best = self.get_sorted_pop_and_global_best_solution(pop, self.ID_MIN_PROB, g_best)
             self.loss_train.append(g_best[self.ID_FIT])
             if self.verbose:
                 print("> Epoch: {}, Best fit: {}".format(epoch + 1, g_best[self.ID_COMPARE]))

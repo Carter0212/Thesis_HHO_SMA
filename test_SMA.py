@@ -24,15 +24,15 @@ def func_ackley(solution):
 ## Or bound is the same for all dimension like this
 lb = [-100]
 ub = [100]
-problem_size = 100
+problem_size = 30
 ## if you choose this way, the problem_size can be anything you want
 
 
 ## Setting parameters
-obj_func = main.find_MaxEE
+obj_func = func_sum
 verbose = True
-epoch = 1000
-pop_size = 50
+epoch = 500
+pop_size = 30
 
 
 
@@ -40,13 +40,14 @@ pop_size = 50
 md1 = BaseSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
 best_pos1, best_fit1, list_loss1 = md1.train()
 # return : the global best solution, the fitness of global best solution and the loss of training process in each epoch/iteration
-print(md1.solution[0])
-print(md1.solution[1])
-print(md1.loss_train)
+print(best_fit1)
+# print(md1.solution[0])
+# print(md1.solution[1])
+# print(md1.loss_train)
 
-md2 = OriginalSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
-best_pos2, best_fit2, list_loss2 = md2.train()
-# return : the global best solution, the fitness of global best solution and the loss of training process in each epoch/iteration
-print(best_pos2)
-print(best_fit2)
-print(list_loss2)
+# md2 = OriginalSMA(obj_func, lb, ub, problem_size, verbose, epoch, pop_size)
+# best_pos2, best_fit2, list_loss2 = md2.train()
+# # return : the global best solution, the fitness of global best solution and the loss of training process in each epoch/iteration
+# print(best_pos2)
+# print(best_fit2)
+# print(list_loss2)

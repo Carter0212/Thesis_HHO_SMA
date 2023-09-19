@@ -83,6 +83,12 @@ class Root:
         # ans=(ans[0],ans[1],ans[2],ans[3],ans[4],ans[5])
         return ans
     
+    def compare_Best_min(self,news,olds):
+        if news > olds:
+            return 1
+        return -1
+    
+    
     def compare_Best(self,news,olds):
         news=news[3]
         olds=olds[3]
@@ -102,18 +108,37 @@ class Root:
         if news[0]==False and olds[0] == False and news[3] < olds[3]:
             return True
         return False
+    
+    def f2_compare_Best(self,news,olds):
+        if news < olds:
+            return -1
+        return 1
+    def f2_compare_Best_bool(self,news,olds):
+        if news < olds:
+            return True
+        return False
 
     def get_sorted_pop_and_global_best_solution(self, pop=None, id_fit=None, id_best=None , id_comapre=None):
         """ Sort population and return the sorted population and the best position """
         # sorted_pop = sorted(pop, key=lambda temp: temp[id_fit])
         print('=============================')
-        for i in pop:
-            print(i[3])
-        sorted_pop = sorted(pop, key=functools.cmp_to_key(self.compare_Best))
-        print('-----------------------------')
-        for i in sorted_pop:
-            print(i[3])
-        print('=============================')
+        
+        # sorted_pop = sorted(pop, key=functools.cmp_to_key(self.compare_Best_min))
+        # print('-----------------------------')
+        # for i in sorted_pop:
+        #     print(i[3])
+        # print('=============================')
+        cmp_func=functools.cmp_to_key(self.f2_compare_Best)
+        np_cmp_func =np.vectorize(cmp_func)
+        pop=np.array(pop)
+        sort_data=np_cmp_func(pop[:,self.ID_FIT])
+        ans_index=np.argsort(sort_data)
+        sorted_pop=pop[ans_index]
+        sorted_pop=sorted_pop[:self.problem_size]
+        #############
+        g_best = sorted_pop[id_best]
+        sorted_pop=sorted_pop.tolist()
+        return sorted_pop, g_best
         # for pop in sorted_pop:
         #     print(pop[3])
         # exit(1)
@@ -128,8 +153,16 @@ class Root:
     def update_sorted_population_and_global_best_solution(self, pop=None, id_best=None, g_best=None):
         """ Sort the population and update the current best position. Return the sorted population and the new current best position """
         # sorted_pop = sorted(pop, key=lambda temp: temp[self.ID_FIT])
-        sorted_pop = sorted(pop, key=functools.cmp_to_key(self.compare_Best))
+        cmp_func=functools.cmp_to_key(self.f2_compare_Best)
+        np_cmp_func =np.vectorize(cmp_func)
+        pop=np.array(pop)
+        sort_data=np_cmp_func(pop[:,self.ID_FIT])
+        ans_index=np.argsort(sort_data)
+        sorted_pop=pop[ans_index]
+        sorted_pop=sorted_pop[:self.problem_size]
+        #############
         current_best = sorted_pop[id_best]
+        sorted_pop=sorted_pop.tolist()
         # g_best = deepcopy(current_best) if current_best[self.ID_FIT] < g_best[self.ID_FIT] else deepcopy(g_best)
-        g_best = deepcopy(current_best) if self.compare_Best_bool(current_best[self.ID_COMPARE],g_best[self.ID_COMPARE])  else deepcopy(g_best)
+        g_best = deepcopy(current_best) if self.f2_compare_Best_bool(current_best[self.ID_COMPARE],g_best[self.ID_COMPARE])  else deepcopy(g_best)
         return sorted_pop, g_best

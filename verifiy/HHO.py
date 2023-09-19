@@ -16,7 +16,7 @@ import math
 from solution import solution
 import time
 import matplotlib.pyplot as plt
-
+import numpy as np
 
 
 def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
@@ -30,7 +30,7 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
     
     # initialize the location and Energy of the rabbit
     Rabbit_Location=numpy.zeros(dim)
-    Rabbit_Energy=float("-inf")  #change this to -inf for maximization problems
+    Rabbit_Energy=float("inf")  #change this to -inf for maximization problems
     
     if not isinstance(lb, list):
         lb = [lb for _ in range(dim)]
@@ -68,7 +68,7 @@ def HHO(objf,lb,ub,dim,SearchAgents_no,Max_iter):
             fitness=objf(X[i,:])
             
             # Update the location of Rabbit
-            if fitness>Rabbit_Energy: # Change this to > for maximization problem
+            if fitness<Rabbit_Energy: # Change this to > for maximization problem
                 Rabbit_Energy=fitness 
                 Rabbit_Location=X[i,:].copy() 
             
@@ -173,6 +173,11 @@ def f2(x):
     return sum(abs(num) for num in x) + ans
     # return sum(num**2 for num in x)
 
+def f1(x):
+    x=numpy.array(x)
+    return np.sum(x ** 2)
+    # return sum(num**2 for num in x)
+
 
 if __name__ == "__main__":
     # lb = [-5, -5]  # 下限
@@ -183,11 +188,11 @@ if __name__ == "__main__":
     import statistics
     f1_list_total=[]
     dim_list=[30,100,500,1000]
-    dim = 20
-    SearchAgents_no=500
-    lb=0
-    ub=1000
-    Max_iter=100
+    dim = 30
+    SearchAgents_no=30
+    lb=-100
+    ub=100
+    Max_iter=500
     ans=HHO(f2, lb, ub, dim, SearchAgents_no, Max_iter)
     plt.plot(ans.convergence,label='HHO')
     plt.legend()

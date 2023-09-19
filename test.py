@@ -20,8 +20,8 @@ constrained_num=6
 
 import csv
 
-def throughtput(num_power,num_distance):    
-    receive_power=P_ij_r(num_power*0.001,lambd,num_distance,alpha,Rayleigh_fading())
+def throughtput(num_power,bs_postion,ue_postion,alpha,lambd):    
+    receive_power=P_ij_r(num_power*0.001,lambd,euclidean_distance(bs_postion,ue_postion),alpha,Rayleigh_fading())
     throughtput = R_ij(W,1, SNR_ij(receive_power,W,N_0))
     return throughtput
 
@@ -120,13 +120,19 @@ if '__main__' == __name__:
     # ans=calculator_throughtput(NP_three_D_X,check_conectional,bs_positions,ue_positions)
     
     # ans=np.array(ans)
-    
-    np.set_printoptions(threshold=sys.maxsize)
+    ue_positions = (0,0)
+    bs_positions = (10,0)
+    num_power = 1000 ##mW
+    rate=throughtput(num_power,bs_positions,ue_positions,alpha,lambd)
+    print(format(rate,'.2E'))
+    exit(1)
+    # np.set_printoptions(threshold=sys.maxsize)
     # print(ans)
+    calculator_throughtput
     # print(f'True : {np.sum(tureFlase_ans!=0)}')
     # print(f'False : {np.sum(tureFlase_ans==0)}')
     conecation = np.linspace(1,10,10)
-    num_power = 1000
+    
     num_distance = np.linspace(1,20,20)
     conecation,num_distance = np.meshgrid(conecation,num_distance)
     ans=throughtput(num_power/conecation,num_distance)

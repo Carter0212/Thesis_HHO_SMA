@@ -1,6 +1,6 @@
 
 import numpy as np
-from Alg import HHO,BaseSMA,OriginalSMA,HHO_SMA,GA,HHO_SMA_ch,HHO_SMA_Chaos,HHO_SMA_DE
+from Alg import HHO,BaseSMA,OriginalSMA,HHO_SMA,GA,HHO_SMA_ch,HHO_SMA_Chaos,HHO_SMA_DE,HHO_DE_Chaos
 import math
 import Alg
 import random
@@ -256,7 +256,7 @@ if __name__ == "__main__":
     function=find_MaxEE
     dimension=2*ue_numbers*base_numbers
     # dimension = 30
-    iteration=10
+    iteration=10000
     problem_size=100
     lb=0
     ub=1000
@@ -266,45 +266,66 @@ if __name__ == "__main__":
     crossover_prob = 0.7
     elit_ratio = 0.01
     cross_type = 'uniform'
-    run_times=25
-    random_seed_list = random.sample(range(1, 1000), run_times)
-    
-    Ga1 =GA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool,parents_portion,mutation_prob,crossover_prob,elit_ratio,cross_type)
-    Ga1.mutil_run(run_times,random_seed_list)
-    OriginalSMA_1=OriginalSMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
-    OriginalSMA_1.mutil_run(run_times,random_seed_list)
-    
-    hhoSMA_DE_1 = HHO_SMA_DE(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
-    hhoSMA_DE_1.mutil_run(run_times,random_seed_list)
-    # hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,f2_compare_Best_bool,ue_numbers,base_numbers)
-    hho_1 = HHO(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
-    hho_1.mutil_run(run_times,random_seed_list)
-    
-    hhoSMA_chaos_1 = HHO_SMA_Chaos(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
-    hhoSMA_chaos_1.mutil_run(run_times,random_seed_list)
-    hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
-    hhoSMA_1.mutil_run(run_times,random_seed_list)
+    Start_run_times=0
+    End_run_times=25
+    random_seed_list = random.sample(range(1, 1000), End_run_times)
+    Mu = 4
+    CR =0.1
 
-    fig_EE,ax_EE = plt.subplots()
-    fig_violation,ax_violation = plt.subplots()
-    ax_EE.plot(Ga1.avg_convergence,label='GA')
-    ax_EE.plot(OriginalSMA_1.avg_convergence,label='SMA')
-    ax_EE.plot(hhoSMA_DE_1.avg_convergence,label='HHO_DE')
-    ax_EE.plot(hho_1.avg_convergence,label='HHO')
-    ax_EE.plot(hhoSMA_chaos_1.avg_convergence,label='HHO_chaos')
-    ax_EE.plot(hhoSMA_1.avg_convergence,label='HHO_SMA')
-    fig_EE.legend()
-    ax_violation.plot(Ga1.avg_constrained_violation_curve,label='GA')
-    ax_violation.plot(OriginalSMA_1.avg_constrained_violation_curve,label='SMA')
-    ax_violation.plot(hhoSMA_DE_1.avg_constrained_violation_curve,label='HHO_DE')
-    ax_violation.plot(hho_1.avg_constrained_violation_curve,label='HHO')
-    ax_violation.plot(hhoSMA_chaos_1.avg_constrained_violation_curve,label='HHO_chaos')
-    ax_violation.plot(hhoSMA_1.avg_constrained_violation_curve,label='HHO_SMA')
+    fig_topo, ax_topo = plt.subplots()
+    print(bs_positions)
+    print(ue_positions)
+    bs_x,bs_y = zip(*bs_positions)
+    ue_x,ue_y = zip(*ue_positions)
+    ax_topo.scatter(ue_x,ue_y,label='user',marker='s')
+    ax_topo.scatter(bs_x,bs_y,label='mBS',marker='o')
+    ax_topo.set_xlim(0,20)
+    ax_topo.set_ylim(0,20)
+    ax_topo.set_xlabel('x-coordinate (m)')
+    ax_topo.set_ylabel('y-coordinate (m)')
+    ax_topo.set_title('Topology')
+    ax_topo.legend()
+    fig_topo.savefig('topo_seed000')
     
-    fig_violation.legend()
-    fig_EE.savefig("EE.jpg")
-    fig_violation.savefig("violation.jpg")
-    plotBox([Ga1,OriginalSMA_1,hhoSMA_DE_1,hho_1,hhoSMA_chaos_1,hhoSMA_1])
+    plt.show()
+
+    # Ga1 =GA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool,parents_portion,mutation_prob,crossover_prob,elit_ratio,cross_type)
+    # Ga1.mutil_run(run_times,random_seed_list)
+    # hhoSMA_DE_1 = HHO_SMA_DE(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    # hhoSMA_DE_1.mutil_run(16,End_run_times,random_seed_list)
+    
+    
+    
+    # hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,f2_compare_Best_bool,ue_numbers,base_numbers)
+    # hho_1 = HHO(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    # hho_1.mutil_run(Start_run_times,End_run_times,random_seed_list)
+    
+    # hhoSMA_chaos_1 = HHO_DE_Chaos(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool,Mu,CR)
+    # hhoSMA_chaos_1.mutil_run(Start_run_times,End_run_times,random_seed_list,CR)
+    # hhoSMA_1 = HHO_SMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    # hhoSMA_1.mutil_run(Start_run_times,End_run_times,random_seed_list)
+    # OriginalSMA_1=OriginalSMA(function,dimension,iteration,problem_size,lb,ub,compare_func,compare_Best_bool)
+    # OriginalSMA_1.mutil_run(Start_run_times,End_run_times,random_seed_list)
+    # fig_EE,ax_EE = plt.subplots()
+    # fig_violation,ax_violation = plt.subplots()
+    # # ax_EE.plot(Ga1.avg_convergence,label='GA')
+    # ax_EE.plot(OriginalSMA_1.avg_convergence,label='SMA')
+    # ax_EE.plot(hhoSMA_DE_1.avg_convergence,label='HHO_DE')
+    # ax_EE.plot(hho_1.avg_convergence,label='HHO')
+    # ax_EE.plot(hhoSMA_chaos_1.avg_convergence,label='HHO_chaos')
+    # ax_EE.plot(hhoSMA_1.avg_convergence,label='HHO_SMA')
+    # fig_EE.legend()
+    # ax_violation.plot(Ga1.avg_constrained_violation_curve,label='GA')
+    # ax_violation.plot(OriginalSMA_1.avg_constrained_violation_curve,label='SMA')
+    # ax_violation.plot(hhoSMA_DE_1.avg_constrained_violation_curve,label='HHO_DE')
+    # ax_violation.plot(hho_1.avg_constrained_violation_curve,label='HHO')
+    # ax_violation.plot(hhoSMA_chaos_1.avg_constrained_violation_curve,label='HHO_chaos')
+    # ax_violation.plot(hhoSMA_1.avg_constrained_violation_curve,label='HHO_SMA')
+    
+    # fig_violation.legend()
+    # fig_EE.savefig("EE.jpg")
+    # fig_violation.savefig("violation.jpg")
+    # plotBox([Ga1,OriginalSMA_1,hhoSMA_DE_1,hho_1,hhoSMA_chaos_1,hhoSMA_1])
     # fig_violation.savefig("HHO_inv.jpg")
     # fig_EE.savefig("HHO_EE.jpg")
     # # csv_to_LO(hhoSMA_1.posRecord)

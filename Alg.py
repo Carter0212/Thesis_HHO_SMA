@@ -204,6 +204,279 @@ class HHO_SMA_ch(Root):
         #         whichBSOverPower=np.where(Power_mask)
         #         POS[1,whichBSOverPower,:]=
 
+class Random(Root):
+    def __init__(self,function,dimension,iteration,problem_size,lb,ub,compare_func,compare_bool_func):
+        Root.__init__(self,function,dimension,iteration,problem_size,lb,ub)
+        # super(HHO, self).__init__(function,dimension,iteration,problem_size,lb,ub)
+        self.compare_func = compare_func
+        self.compare_bool_func = compare_bool_func
+        self.Mu = 4
+
+
+    def run(self):
+        timerStart=time.time() 
+        t = 0
+        convergence_curve=np.zeros(self.iteration)
+        constrained_violation_curve = np.zeros(self.iteration)
+        pop = [self.create_solution() for _ in range(self.problem_size)]
+        pop=np.array(pop)
+        pop,best_Rabbit =self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.compare_func)
+        while t < self.iteration:
+            # self.progress(t,self.iteration,status="Random is running...")
+            original_pop = pop.copy()
+            # original_pop,best_Rabbit=self.update_sorted_population_and_global_best_solution(original_pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,chaos_pop)
+            
+            for i in range(self.problem_size):
+                pop[i,self.ID_POS] = np.asarray([int (x*(self.ub-self.lb)+self.lb) for x in np.random.uniform(0,1,self.dimension)])
+                pop[i,self.ID_FIT]=self.get_fitness(pop[i,self.ID_POS])
+                if self.compare_bool_func(pop[i,self.ID_FIT],best_Rabbit[self.ID_FIT]):
+                    best_Rabbit[self.ID_POS] = pop[i,self.ID_POS]
+                    best_Rabbit[self.ID_FIT] = pop[i,self.ID_FIT]
+            # pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func)   
+            convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
+            
+            constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
+            # self.posRecord.append(pop[:,self.ID_POS])
+            if (t%1==0):
+                    print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
+            t=t+1
+        timerEnd=time.time()  
+        self.endTime=time.strftime("%Y-%m-%d-%H-%M-%S")
+        self.executionTime=timerEnd-timerStart
+        self.best=best_Rabbit[self.ID_FIT][2] 
+        self.bestIndividual = best_Rabbit[self.ID_POS]
+        self.convergence=convergence_curve
+        self.constrained_violation_curve = constrained_violation_curve
+
+class MaxPower(Root):
+    def __init__(self,function,dimension,iteration,problem_size,lb,ub,compare_func,compare_bool_func):
+        Root.__init__(self,function,dimension,iteration,problem_size,lb,ub)
+        # super(HHO, self).__init__(function,dimension,iteration,problem_size,lb,ub)
+        self.compare_func = compare_func
+        self.compare_bool_func = compare_bool_func
+        self.Mu = 4
+
+
+    def run(self):
+        timerStart=time.time() 
+        t = 0
+        convergence_curve=np.zeros(self.iteration)
+        constrained_violation_curve = np.zeros(self.iteration)
+        pop = [self.create_solution() for _ in range(self.problem_size)]
+        pop=np.array(pop)
+        pop,best_Rabbit =self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.compare_func)
+        while t < self.iteration:
+            original_pop = pop.copy()
+            original_pop,best_Rabbit=self.update_sorted_population_and_global_best_solution(original_pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,chaos_pop)
+            
+            for i in range(self.problem_size):
+                pop[i,self.ID_POS] = np.asarray([int (x*(self.ub-self.lb)+self.lb) for x in np.random.uniform(0,1,self.dimension)])
+                pop[i,self.ID_FIT]=self.get_fitness(pop[i,self.ID_POS])
+            pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,original_pop)   
+            convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
+            
+            constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
+            # self.posRecord.append(pop[:,self.ID_POS])
+            if (t%1==0):
+                    print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
+            t=t+1
+        timerEnd=time.time()  
+        self.endTime=time.strftime("%Y-%m-%d-%H-%M-%S")
+        self.executionTime=timerEnd-timerStart
+        self.best=best_Rabbit[self.ID_FIT][2] 
+        self.bestIndividual = best_Rabbit[self.ID_POS]
+        self.convergence=convergence_curve
+        self.constrained_violation_curve = constrained_violation_curve
+
+class HHO_DE_Chaos(Root):
+    def __init__(self,function,dimension,iteration,problem_size,lb,ub,compare_func,compare_bool_func,Mu,CR):
+        Root.__init__(self,function,dimension,iteration,problem_size,lb,ub)
+        # super(HHO, self).__init__(function,dimension,iteration,problem_size,lb,ub)
+        self.compare_func = compare_func
+        self.compare_bool_func = compare_bool_func
+        self.Mu = Mu
+        self.CR = CR
+
+
+    def run(self):
+        timerStart=time.time() 
+        t = 0
+        convergence_curve=np.zeros(self.iteration)
+        constrained_violation_curve = np.zeros(self.iteration)
+        pop = [self.create_solution() for _ in range(self.problem_size)]
+        # pop[-1,self.ID_POS] = 
+        pop=np.array(pop)
+                        
+        pop,best_Rabbit =self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.compare_func)
+        while t < self.iteration:
+            original_pop = pop.copy()
+            chaos_pop=self.chaos(original_pop.copy())
+            original_pop,best_Rabbit=self.update_sorted_population_and_global_best_solution(original_pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,chaos_pop)
+            # self.progress(t,self.iteration,status="HHO is running...")
+            # E1=2*(1-(t/self.iteration)) # factor to show the decreaing energy of rabbit 
+            E1 = np.log(np.power(t/self.iteration,1/3))
+            p = 1-(t/self.iteration)
+            for i in range(self.problem_size):
+                # r8 = np.random.normal(0,1)
+                # r7 = np.random.normal(0,1)
+                # if np.random.normal(0,1) <0.03:
+                #     a= np.random.randint(self.lb, self.ub, size=self.dimension)
+                #     pop[i,self.ID_POS] = a
+                # elif r8 < p:
+                E0=2*random.random()-1  # -1<E0<1
+                Escaping_Energy=E1*(E0)  # escaping energy of rabbit Eq. (3) in the paper
+
+
+                # -------- Exploration phase Eq. (1) in paper -------------------#
+
+                if abs(Escaping_Energy)>=1:
+                    q = random.random()
+                    rand_Hawk_index = math.floor(self.problem_size*random.random())
+                    pop_rand = pop[rand_Hawk_index,0]
+                    if q<0.5:
+                    # perch based on other family members
+                        pop[i,self.ID_POS]=(pop_rand-random.random()*abs(pop_rand-2*random.random()*
+                                                                        pop[i,self.ID_POS])).astype(int)
+                        
+                        
+                    elif q>=0.5:
+                        #perch on a random tall tree (random site inside group's home range)
+                        pop[i,self.ID_POS]=((best_Rabbit[self.ID_POS] - pop[:,self.ID_POS].mean(0))-
+                                            random.random()*((self.ub-self.lb)*random.random()+self.lb)).astype(int)
+                elif abs(Escaping_Energy)<1:
+                    #Attacking the rabbit using 4 strategies regarding the behavior of the rabbit
+                    
+                        # self.check_fuc(pop[i,self.ID_POS],'E>=0.5,r>=0.5')
+                    #phase 1: ----- surprise pounce (seven kills) ----------
+                    #surprise pounce (seven kills): multiple, short rapid dives by different hawks
+
+                    r=random.random() # probablity of each event
+                    if r>=0.5 and abs(Escaping_Energy)<0.5: # Hard besiege Eq. (6) in paper
+                        pop[i,self.ID_POS]=((best_Rabbit[self.ID_POS])-Escaping_Energy*
+                                            abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])).astype(int)
+                        # X3 = best_Rabbit[self.ID_POS]+r7*(pop[:,self.ID_POS].mean(0)-pop[i,self.ID_POS])
+                        # X3_1=(best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
+                        # X3_fitness=self.obj_func(X3)
+                        # X3_1_fitness=self.obj_func(X3_1)
+                        # if self.compare_bool_func(X3_fitness,X3_1_fitness):
+                        #     pop[i]=(X3.copy(),X3_fitness)
+                        # else:
+                        #     pop[i]=(X3_1.copy(),X3_1_fitness)
+                    
+                    if r>=0.5 and abs(Escaping_Energy)>=0.5:  # Soft besiege Eq. (4) in paper
+                        Jump_strength=2*(1- random.random()) # random jump strength of the rabbit
+                        pop[i,self.ID_POS]=((best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])-Escaping_Energy*
+                                            abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])).astype(int)
+                        # X4=(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
+                        # X4_1=(best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
+                        # X4_fitness=self.obj_func(X4)
+                        # X4_1_fitness=self.obj_func(X4_1)
+                        # if self.compare_bool_func(X4_fitness,X4_1_fitness):
+                        #     pop[i]=(X4.copy(),X4_fitness)
+                        # else:
+                        #     pop[i]=(X4_1.copy(),X4_1_fitness)
+                    
+                    #phase 2: --------performing team rapid dives (leapfrog movements)----------
+
+                    if r<0.5 and abs(Escaping_Energy)>=0.5: # Soft besiege Eq. (10) in paper
+                        #rabbit try to escape by many zigzag deceptive motions
+                        Jump_strength=2*(1-random.random())
+                        X1=(best_Rabbit[self.ID_POS]-Escaping_Energy*
+                            abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])).astype(int)
+                        X1 = np.clip(X1, self.lb, self.ub)
+                        X1_fitness = self.get_fitness(X1)
+                        if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
+                            pop[i] = (X1.copy(),X1_fitness)
+                        else: # hawks perform levy-based short rapid dives around the rabbit
+                            X2=(best_Rabbit[self.ID_POS]-Escaping_Energy*
+                                abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])+
+                                np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))).astype(int)
+                            X2 = np.clip(X2, self.lb, self.ub)
+                            X2_fitness = self.get_fitness(X2)
+                            if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]): # improved move?
+                                pop[i] = (X2.copy(),X2_fitness) 
+                    
+                    if r<0.5 and abs(Escaping_Energy)<0.5:   # Hard besiege Eq. (11) in paper
+                        Jump_strength=2*(1-random.random())
+                        X1=(best_Rabbit[self.ID_POS]-Escaping_Energy*
+                            abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))).astype(int)
+                        X1 = np.clip(X1, self.lb, self.ub)
+                        X1_fitness = self.get_fitness(X1)
+                        if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
+                            pop[i] = (X1.copy(),X1_fitness)
+                        else: # Perform levy-based short rapid dives around the rabbit
+                            X2=(best_Rabbit[self.ID_POS]-Escaping_Energy*
+                                abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))+
+                                np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))).astype(int)
+                            X2 = np.clip(X2, self.lb, self.ub)
+                            X2_fitness = self.get_fitness(X2)
+                            if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]):
+                                pop[i] = (X2.copy(),X2_fitness)
+                # elif r8 >= p:
+                #     pop[i,self.ID_POS] = pop[i,self.ID_POS]*np.random.normal(0,1,size=self.dimension)
+                pop[i,self.ID_FIT]=self.get_fitness(pop[i,self.ID_POS])
+                # self.DE_Strategy(pop,i)
+            pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,original_pop)   
+            convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
+            
+            constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
+            # self.posRecord.append(pop[:,self.ID_POS])
+            if (t%1==0):
+                    print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
+            t=t+1
+        timerEnd=time.time()  
+        self.endTime=time.strftime("%Y-%m-%d-%H-%M-%S")
+        self.executionTime=timerEnd-timerStart
+        self.best=best_Rabbit[self.ID_FIT][2] 
+        self.bestIndividual = best_Rabbit[self.ID_POS]
+        self.convergence=convergence_curve
+        self.constrained_violation_curve = constrained_violation_curve
+
+    def chaos(self,original_pop):
+        chaos = random.random()
+
+        for ch in range(self.problem_size):
+            chaos = self.Mu * chaos * (1-chaos)
+            buffer=original_pop[ch,self.ID_POS]*chaos
+            original_pop[ch,self.ID_POS]= buffer
+            original_pop[ch,self.ID_FIT] = self.get_fitness(original_pop[ch,self.ID_POS])    
+        return original_pop
+
+    def DE_Strategy(self,pop,i):
+        choice_three_pop=random.sample(range(0,self.problem_size),3)
+        while i in choice_three_pop:
+            choice_three_pop=random.sample(range(0,self.problem_size),3)
+        V_POS=(pop[choice_three_pop[0]][self.ID_POS] + 
+               (np.random.uniform(0.2,0.8)*
+                (pop[choice_three_pop[1]][self.ID_POS]-pop[choice_three_pop[2]][self.ID_POS]))).astype(int)
+        U_POS=np.zeros(self.dimension)
+
+        CR_compare =np.random.uniform(size=self.dimension) <= self.CR
+        U_POS = (V_POS*CR_compare + pop[i][self.ID_POS]*(~CR_compare)).astype(int)
+
+
+        ##Crossover operation
+        # for dim in range(self.dimension):
+        #     if np.random.random() <= self.CR:
+        #         U_POS[dim] = V_POS[dim]
+        #     else:
+        #         U_POS[dim] = pop[i][self.ID_POS][dim]
+
+        ## Selection operation
+        U_FIT=self.get_fitness(U_POS)
+        if self.compare_bool_func(U_FIT,pop[i][self.ID_FIT]):
+            pop[i]=(U_POS.copy(),U_FIT)
+
+    
+    def Levy(self,dim):
+        beta=1.5
+        sigma=(math.gamma(1+beta)*math.sin(math.pi*beta/2)/(math.gamma((1+beta)/2)*beta*2**((beta-1)/2)))**(1/beta) 
+        u= 0.01*np.random.randn(dim)*sigma
+        v = np.random.randn(dim)
+        zz = np.power(np.absolute(v),(1/beta))
+        step = np.divide(u,zz)
+        return step
+
 class HHO_SMA_Chaos(Root):
     def __init__(self,function,dimension,iteration,problem_size,lb,ub,compare_func,compare_bool_func):
         Root.__init__(self,function,dimension,iteration,problem_size,lb,ub)
@@ -248,11 +521,11 @@ class HHO_SMA_Chaos(Root):
                     pop_rand = pop[rand_Hawk_index,0]
                     if q<0.5:
                     # perch based on other family members
-                        pop[i,self.ID_POS]=pop_rand-random.random()*abs(pop_rand-2*random.random()*pop[i,self.ID_POS])
+                        pop[i,self.ID_POS]=int(pop_rand-random.random()*abs(pop_rand-2*random.random()*pop[i,self.ID_POS]))
                         
                     elif q>=0.5:
                         #perch on a random tall tree (random site inside group's home range)
-                        pop[i,self.ID_POS]=(best_Rabbit[self.ID_POS] - pop[:,self.ID_POS].mean(0))-random.random()*((self.ub-self.lb)*random.random()+self.lb)
+                        pop[i,self.ID_POS]=int((best_Rabbit[self.ID_POS] - pop[:,self.ID_POS].mean(0))-random.random()*((self.ub-self.lb)*random.random()+self.lb))
                 elif abs(Escaping_Energy)<1:
                     #Attacking the rabbit using 4 strategies regarding the behavior of the rabbit
 
@@ -261,8 +534,8 @@ class HHO_SMA_Chaos(Root):
 
                     r=random.random() # probablity of each event
                     if r>=0.5 and abs(Escaping_Energy)<0.5: # Hard besiege Eq. (6) in paper
-                        X3 = best_Rabbit[self.ID_POS]+r7*(pop[:,self.ID_POS].mean(0)-pop[i,self.ID_POS])
-                        X3_1=(best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
+                        X3 = int(best_Rabbit[self.ID_POS]+r7*(pop[:,self.ID_POS].mean(0)-pop[i,self.ID_POS]))
+                        X3_1=int((best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS]))
                         X3_fitness=self.obj_func(X3)
                         X3_1_fitness=self.obj_func(X3_1)
                         if self.compare_bool_func(X3_fitness,X3_1_fitness):
@@ -272,8 +545,8 @@ class HHO_SMA_Chaos(Root):
                     
                     if r>=0.5 and abs(Escaping_Energy)>=0.5:  # Soft besiege Eq. (4) in paper
                         Jump_strength=2*(1- random.random()) # random jump strength of the rabbit
-                        X4=(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
-                        X4_1=(best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
+                        X4=int((best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS]))
+                        X4_1=int((best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS]))
                         X4_fitness=self.obj_func(X4)
                         X4_1_fitness=self.obj_func(X4_1)
                         if self.compare_bool_func(X4_fitness,X4_1_fitness):
@@ -286,13 +559,13 @@ class HHO_SMA_Chaos(Root):
                     if r<0.5 and abs(Escaping_Energy)>=0.5: # Soft besiege Eq. (10) in paper
                         #rabbit try to escape by many zigzag deceptive motions
                         Jump_strength=2*(1-random.random())
-                        X1=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
+                        X1=int(best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS]))
                         X1 = np.clip(X1, self.lb, self.ub)
                         X1_fitness = self.obj_func(X1)
                         if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                             pop[i] = (X1.copy(),X1_fitness)
                         else: # hawks perform levy-based short rapid dives around the rabbit
-                            X2=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))
+                            X2=int(best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension)))
                             X2 = np.clip(X2, self.lb, self.ub)
                             X2_fitness = self.obj_func(X2)
                             if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]): # improved move?
@@ -300,13 +573,13 @@ class HHO_SMA_Chaos(Root):
                     
                     if r<0.5 and abs(Escaping_Energy)<0.5:   # Hard besiege Eq. (11) in paper
                         Jump_strength=2*(1-random.random())
-                        X1=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))
+                        X1=int(best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0)))
                         X1 = np.clip(X1, self.lb, self.ub)
                         X1_fitness = self.obj_func(X1)
                         if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                             pop[i] = (X1.copy(),X1_fitness)
                         else: # Perform levy-based short rapid dives around the rabbit
-                            X2=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))
+                            X2=int(best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension)))
                             X2 = np.clip(X2, self.lb, self.ub)
                             X2_fitness = self.obj_func(X2)
                             if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]):
@@ -314,11 +587,12 @@ class HHO_SMA_Chaos(Root):
                 # elif r8 >= p:
                 #     pop[i,self.ID_POS] = pop[i,self.ID_POS]*np.random.normal(0,1,size=self.dimension)
                 pop[i,self.ID_FIT]=self.get_fitness(pop[i,self.ID_POS])
+
             pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,original_pop)   
             convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
             
             constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
-            self.posRecord.append(pop[:,self.ID_POS])
+            # self.posRecord.append(pop[:,self.ID_POS])
             if (t%1==0):
                     print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
             t=t+1
@@ -461,7 +735,7 @@ class HHO_SMA_DE(Root):
             pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,original_pop)   
             convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
             constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
-            self.posRecord.append(pop[:,self.ID_POS])
+            # self.posRecord.append(pop[:,self.ID_POS])
             if (t%1==0):
                     print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
             t=t+1
@@ -565,8 +839,8 @@ class HHO_SMA(Root):
                     if r>=0.5 and abs(Escaping_Energy)<0.5: # Hard besiege Eq. (6) in paper
                         X3 = best_Rabbit[self.ID_POS]+r7*(pop[:,self.ID_POS].mean(0)-pop[i,self.ID_POS])
                         X3_1=(best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
-                        X3_fitness=self.obj_func(X3)
-                        X3_1_fitness=self.obj_func(X3_1)
+                        X3_fitness=self.get_fitness(X3)
+                        X3_1_fitness=self.get_fitness(X3_1)
                         if self.compare_bool_func(X3_fitness,X3_1_fitness):
                             pop[i]=(X3.copy(),X3_fitness)
                         else:
@@ -576,8 +850,8 @@ class HHO_SMA(Root):
                         Jump_strength=2*(1- random.random()) # random jump strength of the rabbit
                         X4=(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
                         X4_1=(best_Rabbit[self.ID_POS])-Escaping_Energy*abs(best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
-                        X4_fitness=self.obj_func(X4)
-                        X4_1_fitness=self.obj_func(X4_1)
+                        X4_fitness=self.get_fitness(X4)
+                        X4_1_fitness=self.get_fitness(X4_1)
                         if self.compare_bool_func(X4_fitness,X4_1_fitness):
                             pop[i]=(X4.copy(),X4_fitness)
                         else:
@@ -590,13 +864,13 @@ class HHO_SMA(Root):
                         Jump_strength=2*(1-random.random())
                         X1=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
                         X1 = np.clip(X1, self.lb, self.ub)
-                        X1_fitness = self.obj_func(X1)
+                        X1_fitness = self.get_fitness(X1)
                         if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                             pop[i] = (X1.copy(),X1_fitness)
                         else: # hawks perform levy-based short rapid dives around the rabbit
                             X2=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))
                             X2 = np.clip(X2, self.lb, self.ub)
-                            X2_fitness = self.obj_func(X2)
+                            X2_fitness = self.get_fitness(X2)
                             if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                                 pop[i] = (X2.copy(),X2_fitness) 
                     
@@ -604,13 +878,13 @@ class HHO_SMA(Root):
                         Jump_strength=2*(1-random.random())
                         X1=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))
                         X1 = np.clip(X1, self.lb, self.ub)
-                        X1_fitness = self.obj_func(X1)
+                        X1_fitness = self.get_fitness(X1)
                         if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                             pop[i] = (X1.copy(),X1_fitness)
                         else: # Perform levy-based short rapid dives around the rabbit
                             X2=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))
                             X2 = np.clip(X2, self.lb, self.ub)
-                            X2_fitness = self.obj_func(X2)
+                            X2_fitness = self.get_fitness(X2)
                             if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]):
                                 pop[i] = (X2.copy(),X2_fitness)
                 # elif r8 >= p:
@@ -619,7 +893,7 @@ class HHO_SMA(Root):
             pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func,original_pop)   
             convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
             constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
-            self.posRecord.append(pop[:,self.ID_POS])
+            # self.posRecord.append(pop[:,self.ID_POS])
             if (t%1==0):
                     print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
             t=t+1
@@ -715,13 +989,13 @@ class HHO(Root):
                         Jump_strength=2*(1-random.random())
                         X1=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])
                         X1 = np.clip(X1, self.lb, self.ub)
-                        X1_fitness = self.obj_func(X1)
+                        X1_fitness = self.get_fitness(X1)
                         if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                             pop[i] = (X1.copy(),X1_fitness)
                         else: # hawks perform levy-based short rapid dives around the rabbit
                             X2=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[i,self.ID_POS])+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))
                             X2 = np.clip(X2, self.lb, self.ub)
-                            X2_fitness = self.obj_func(X2)
+                            X2_fitness = self.get_fitness(X2)
                             if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                                 pop[i] = (X2.copy(),X2_fitness)
                         # self.check_fuc(pop[i,self.ID_POS],'E>=0.5,q<0.5') 
@@ -730,13 +1004,13 @@ class HHO(Root):
                         Jump_strength=2*(1-random.random())
                         X1=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))
                         X1 = np.clip(X1, self.lb, self.ub)
-                        X1_fitness = self.obj_func(X1)
+                        X1_fitness = self.get_fitness(X1)
                         if self.compare_bool_func(X1_fitness,best_Rabbit[self.ID_FIT]): # improved move?
                             pop[i] = (X1.copy(),X1_fitness)
                         else: # Perform levy-based short rapid dives around the rabbit
                             X2=best_Rabbit[self.ID_POS]-Escaping_Energy*abs(Jump_strength*best_Rabbit[self.ID_POS]-pop[:,self.ID_POS].mean(0))+np.multiply(np.random.randn(self.dimension),self.Levy(self.dimension))
                             X2 = np.clip(X2, self.lb, self.ub)
-                            X2_fitness = self.obj_func(X2)
+                            X2_fitness = self.get_fitness(X2)
                             if self.compare_bool_func(X2_fitness,best_Rabbit[self.ID_FIT]):
                                 pop[i] = (X2.copy(),X2_fitness)
                         # self.check_fuc(pop[i,self.ID_POS],'E>0.5,q<0.5')
@@ -745,7 +1019,7 @@ class HHO(Root):
             pop,best_Rabbit = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_Rabbit,self.compare_func,self.compare_bool_func)   
             convergence_curve[t]=best_Rabbit[self.ID_FIT][2]
             constrained_violation_curve[t] = best_Rabbit[self.ID_FIT][3]
-            self.posRecord.append(pop[:,self.ID_POS])
+            # self.posRecord.append(pop[:,self.ID_POS])
             if (t%1==0):
                     print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_Rabbit[self.ID_FIT])])
             t=t+1
@@ -900,7 +1174,7 @@ class OriginalSMA(Root):
         pop,g_best =self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.compare_func)
         while t < self.iteration:
             # self.progress(t,self.iteration,status="BaseSMA is running...")
-            s = pop[0][self.ID_FIT][2] - pop[-1][self.ID_FIT][2] + self.EPSILON
+            s = abs(pop[0][self.ID_FIT][2] - pop[-1][self.ID_FIT][2] + self.EPSILON)
             
              # calculate the fitness weight of each slime mold
 
@@ -946,6 +1220,7 @@ class OriginalSMA(Root):
             
             # Sorted population and update the global best
             pop, g_best = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,g_best,self.compare_func,self.compare_bool_func)   
+            
             convergence_curve[t]=g_best[self.ID_FIT][2]
             constrained_violation_curve[t] = g_best[self.ID_FIT][3]
             if (t%1==0):
@@ -1008,7 +1283,7 @@ class GA(Root):
         pop = [self.create_solution() for _ in range(self.problem_size)]
         pop=np.array(pop)
         pop,best_chromosome =self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.compare_func)
-
+        
         while t < self.iteration:
             # self.progress(t,self.iteration,status="GA is running...")
 
@@ -1160,3 +1435,105 @@ class GA(Root):
 
     def get_best_individual(self):
         pass
+
+class ES(Root):
+    def __init__(self,function,dimension,iteration,problem_size,lb,ub,compare_func,compare_bool_func,parents_portion,mutation_prob,crossover_prob,elit_ratio,cross_type):
+        Root.__init__(self,function,dimension,iteration,problem_size,lb,ub)
+        self.compare_func = compare_func
+        self.compare_bool_func = compare_bool_func
+        
+    
+    def run(self):
+        ## use Roulette Wheel & elit 
+        timerStart=time.time() 
+        self.startTime=time.strftime("%Y-%m-%d-%H-%M-%S")
+        Best_pop = np.asarray([0 for x in range(self.dimension)]).astype(int)
+        Best_fit = self.get_fitness(Best_pop)
+        dimensions = np.arange(self.lb, self.ub + 1)
+        mesh = np.meshgrid(*[dimensions] * self.dimension, indexing='ij')
+
+
+        # t = 0
+        # convergence_curve=np.zeros(self.iteration)
+        # constrained_violation_curve = np.zeros(self.iteration)
+        # pop = [self.create_solution() for _ in range(self.problem_size)]
+        # pop=np.array(pop)
+        # pop,best_chromosome =self.get_sorted_pop_and_global_best_solution(pop, self.ID_FIT, self.ID_MIN_PROB,self.compare_func)
+        
+        # while t < self.iteration:
+        #     # self.progress(t,self.iteration,status="GA is running...")
+
+        #     # Normalizing objective function
+        #     normal_obj = np.zeros(self.problem_size)
+        #     for index,i in enumerate(pop[:,self.ID_FIT].copy()):
+        #         normal_obj[index] = i[2]
+        #     # normal_obj = np.zeros(self.problem_size)
+        #     # normal_obj=pop[:,self.ID_FIT].copy()
+        #     # print(np.shape(normal_obj))
+        #     maxnorm = np.amax(normal_obj)
+        #     # print(normal_obj)
+        #     # print('======================')
+        #     # print(maxnorm)
+        #     normal_obj = maxnorm - normal_obj +1
+
+        #     #############################################################        
+        #     # Calculate probability
+        #     sum_normobj=np.sum(normal_obj)
+        #     prob=np.zeros(self.problem_size)
+        #     prob=normal_obj/sum_normobj
+            
+        #     cumprob=np.cumsum(prob)
+        #     par = np.zeros((self.par_s,2),dtype=pop.dtype)
+        #     # Select elite individuals
+        #     # print(pop[0,1].dtype)
+        #     par[0:self.num_elit] = pop[0:self.num_elit].copy()
+
+        #     # Select non-elite individuals using roulette wheel selection
+        #     index=np.searchsorted(cumprob,np.random.random(self.par_s-self.num_elit))
+        #     par[self.num_elit:self.par_s]=pop[index].copy()
+
+        #     ef_par_list = (np.random.random(self.par_s)<=self.crossover_prob)
+        #     par_count = ef_par_list.sum()
+
+
+        #     elite_par=par[ef_par_list].copy()
+
+        #     ## New generation
+
+        #     pop[:self.par_s] = par[:self.par_s].copy()
+            
+        #     for k in range(self.par_s,self.problem_size,2):
+        #         r1 = np.random.randint(0,par_count)
+        #         r2 = np.random.randint(0,par_count)
+        #         pvar1 = elite_par[r1].copy()
+        #         pvar2 = elite_par[r2].copy()
+
+        #         ch1,ch2 = self.crossover(pvar1,pvar2)
+
+        #         ch1=self.mut(ch1)
+        #         ch2=self.mutmidle(ch2,pvar1,pvar2)
+        #         pop[k] = ch1.copy()
+        #         pop[k+1] = ch2.copy()
+        #         pop[k,self.ID_FIT]=self.get_fitness(pop[k,self.ID_POS])
+        #         pop[k+1,self.ID_FIT]=self.get_fitness(pop[k+1,self.ID_POS])
+            
+        #     pop,best_chromosome = self.update_sorted_population_and_global_best_solution(pop,self.ID_MIN_PROB,best_chromosome,self.compare_func,self.compare_bool_func)
+        #     convergence_curve[t]=best_chromosome[self.ID_FIT][2]
+        #     constrained_violation_curve[t] = best_chromosome[self.ID_FIT][3]
+        #     if (t%1==0):
+        #             print(['At iteration '+ str(t)+ ' the best fitness is '+ str(best_chromosome[self.ID_FIT])])
+        #     t=t+1
+        self.convergence=convergence_curve
+        self.constrained_violation_curve = constrained_violation_curve
+        timerEnd=time.time()  
+        self.endTime=time.strftime("%Y-%m-%d-%H-%M-%S")
+        self.executionTime=timerEnd-timerStart
+        self.best=best_chromosome[self.ID_FIT][2] 
+        self.bestIndividual = best_chromosome[self.ID_POS]
+        
+
+
+    
+    
+    
+    
